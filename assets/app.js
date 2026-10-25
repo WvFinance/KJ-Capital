@@ -217,7 +217,10 @@ function renderHistory(box=$("#hist-body")){
   const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,class:"hist",role:"img","aria-label":"Your portfolio value compared with the S&P 500 over time"});
   const step=niceStep((mx-mn)/4);for(let v=Math.ceil(mn/step)*step;v<=mx;v+=step){const Y=y(v);svg.append(sv("line",{x1:L,x2:W-Rr,y1:Y,y2:Y,stroke:"var(--line)"}));const t=sv("text",{x:L-8,y:Y+4,"text-anchor":"end"});t.textContent=(v>0?"+":"")+Math.round(v*100*10)/10+"%";svg.append(t);}
   svg.append(sv("line",{x1:L,x2:W-Rr,y1:y(0),y2:y(0),stroke:"var(--muted)","stroke-width":1.5}));
-  const nt=Math.min(W<520?3:5,pts.length);for(let k=0;k<nt;k++){const i=nt===1?0:Math.round(k*(pts.length-1)/(nt-1));const t=sv("text",{x:x(i),y:H-8,"text-anchor":k===0?"start":k===nt-1?"end":"middle"});t.textContent=fmtDate(pts[i].day).replace(/, \d{4}$/,"");svg.append(t);}
+  // When the chart spans more than one year, label the axis by month and year, like "May '25".
+  const multiYr=pts[0].day.slice(0,4)!==pts[pts.length-1].day.slice(0,4);
+  const tickYr=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{month:"short"})+" '"+d.slice(2,4);
+  const nt=Math.min(W<520?3:5,pts.length);for(let k=0;k<nt;k++){const i=nt===1?0:Math.round(k*(pts.length-1)/(nt-1));const t=sv("text",{x:x(i),y:H-8,"text-anchor":k===0?"start":k===nt-1?"end":"middle"});t.textContent=multiYr?tickYr(pts[i].day):fmtDate(pts[i].day).replace(/, \d{4}$/,"");svg.append(t);}
   const line=(key,col,w)=>sv("path",{d:pts.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(p[key]).toFixed(1)).join(""),fill:"none",stroke:col,"stroke-width":w,"stroke-linejoin":"round","stroke-linecap":"round"});
   svg.append(line("s","var(--ink-2)",2),line("c","var(--gold)",3));
   const lastP=pts[pts.length-1];svg.append(sv("circle",{cx:x(pts.length-1),cy:y(lastP.c),r:4,fill:"var(--gold)"}),sv("circle",{cx:x(pts.length-1),cy:y(lastP.s),r:3.5,fill:"var(--ink-2)"}));
