@@ -185,11 +185,12 @@ function renderPositions(){
 // Rough sector split inside each fund, from the funds' published sector weights (approximate, rounded).
 // Communication companies like Google and Meta count as Tech, to match how the site labels those stocks.
 const FUND_SECTORS={
-  SPYM:{"Tech":44,"Banks & finance":13,"Shopping":10,"Health":9,"Industrials":8,"Everyday goods":5,"Energy":3,"Utilities":2.5,"Real estate":2,"Materials":2},
-  QQQM:{"Tech":66,"Shopping":13,"Everyday goods":5,"Health":5,"Industrials":5,"Utilities":1.5,"Banks & finance":1,"Materials":1,"Energy":0.5},
-  IOO:{"Tech":49,"Shopping":11,"Banks & finance":10,"Health":10,"Everyday goods":6,"Industrials":5,"Energy":5,"Materials":2,"Utilities":1},
+  SPYM:{"Tech":44,"Banks & finance":13,"Shopping & cars":10,"Health":9,"Industrials":8,"Everyday goods":5,"Energy":3,"Utilities":2.5,"Real estate & materials":4},
+  QQQM:{"Tech":66,"Shopping & cars":13,"Everyday goods":5,"Health":5,"Industrials":5,"Utilities":1.5,"Banks & finance":1,"Real estate & materials":1,"Energy":0.5},
+  IOO:{"Tech":49,"Shopping & cars":11,"Banks & finance":10,"Health":10,"Everyday goods":6,"Industrials":5,"Energy":5,"Real estate & materials":2,"Utilities":1},
   QTUM:{"Tech":85,"Industrials":15},
-  UFO:{"Space":100}};
+  // Space companies are rocket and satellite makers (Industrials) plus satellite internet and TV (counted as Tech).
+  UFO:{"Industrials":60,"Tech":40}};
 function renderSectors(){
   const box=$("#sec-body");const by={},from={};
   const add=(sec,v,label)=>{by[sec]=(by[sec]||0)+v;(from[sec]=from[sec]||[]).push([label,v]);};
