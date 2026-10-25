@@ -5,7 +5,7 @@ on:
     - cron: "30 21 * * 1-5"   # weekdays after the market closes (4:30pm Eastern in winter)
   push:
     branches: [main]
-    paths: [data/portfolio.json, scripts/update_prices.py, .github/workflows/update-prices.yml]
+    paths: [data/portfolio.enc.json, scripts/update_prices.py, .github/workflows/update-prices.yml]
   workflow_dispatch:
 
 permissions:
@@ -23,12 +23,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # The data files are locked with the site password (see scripts/lock.mjs).
+      - run: node scripts/lock.mjs unlock
+        env:
+          KJ_PASSWORD: ${{ secrets.KJ_PASSWORD }}
       - run: python scripts/update_prices.py
+      - run: node scripts/lock.mjs lock
+        env:
+          KJ_PASSWORD: ${{ secrets.KJ_PASSWORD }}
       - name: Save the new prices
         run: |
-          if git diff --quiet -- data/prices.json; then echo "No change"; exit 0; fi
+          if git diff --quiet -- data/prices.enc.json; then echo "No change"; exit 0; fi
           git config user.name "wvfc-price-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/prices.json
+          git add data/prices.enc.json
           git commit -m "Update closing prices"
           git push

@@ -1,3 +1,8 @@
 node_modules/
 .wrangler/
 .dev.vars
+
+# Plain data files; only the locked .enc.json copies are committed (see scripts/lock.mjs).
+data/portfolio.json
+data/prices.json
+data/news.json

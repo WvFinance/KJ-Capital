@@ -61,6 +61,14 @@ window.addEventListener("hashchange",()=>showTab(location.hash.slice(1)));
 
 /* ---------- Data ---------- */
 async function loadJSON(path){const r=await fetch(path+"?v="+Date.now(),{cache:"no-store"});if(!r.ok)throw new Error(path+" "+r.status);return r.json();}
+// Data files are locked with the site password (scripts/lock.mjs); the password screen saves the key on this device.
+const unb64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));let kjKey=null;
+async function loadLocked(path){
+  const box=await loadJSON(path.replace(/\.json$/,".enc.json"));
+  if(!kjKey){let raw=window.KJ_KEY;try{raw=raw||localStorage.getItem("kj-key");}catch(e){}kjKey=await crypto.subtle.importKey("raw",unb64(raw),"AES-GCM",false,["decrypt"]);}
+  try{return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(box.iv)},kjKey,unb64(box.data))));}
+  catch(e){const err=new Error("locked");err.locked=true;throw err;}
+}
 async function quote(tk){
   if(!CFG.finnhubKey)return null;
   if(S.quotes[tk])return S.quotes[tk];
@@ -340,7 +348,9 @@ let rsT;window.addEventListener("resize",()=>{clearTimeout(rsT);rsT=setTimeout((
 darkMQ.addEventListener&&darkMQ.addEventListener("change",()=>{rendered.search=null;rendered.news=null;renderPicks();const t=location.hash.slice(1);if(t==="search")renderSearch();if(t==="news")renderNewsFeed();});
 async function boot(){
   renderWatch();renderQuick();
-  const [pf,nw,px]=await Promise.allSettled([loadJSON("data/portfolio.json"),loadJSON("data/news.json"),loadJSON("data/prices.json")]);
+  const [pf,nw,px]=await Promise.allSettled([loadLocked("data/portfolio.json"),loadLocked("data/news.json"),loadLocked("data/prices.json")]);
+  // A saved key that no longer works means the password changed: forget it and show the password screen.
+  if([pf,nw,px].some(r=>r.status==="rejected"&&r.reason&&r.reason.locked)){try{localStorage.removeItem("kj-key");}catch(e){}location.reload();return;}
   if(px.status==="fulfilled"&&px.value&&px.value.closes)S.prices=px.value;
   if(pf.status==="fulfilled")S.picks=(pf.value.picks||[]).filter(p=>p.ticker&&p.entryPrice>0&&p.entryDate);
   if(nw.status==="fulfilled"){S.briefs=nw.value.briefs||[];if(nw.value.updated)$("#news-asof").textContent="News briefs updated "+fmtDate(nw.value.updated);}
@@ -348,5 +358,5 @@ async function boot(){
   showTab(location.hash.slice(1)||"portfolio");
   if(S.picks.length&&CFG.finnhubKey){await Promise.all(S.picks.map(p=>quote(p.ticker)).concat([quote("SPY")]));renderTiles();renderCompare();renderPicks();renderBreakdown();}
 }
-boot();
+if(document.documentElement.classList.contains("unlocked"))boot();else window.addEventListener("kj-unlocked",boot,{once:true});
 })();

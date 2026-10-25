@@ -23,6 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # The data files are locked with the site password (see scripts/lock.mjs).
+      - run: node scripts/lock.mjs unlock
+        env:
+          KJ_PASSWORD: ${{ secrets.KJ_PASSWORD }}
       # The Sunday run skips itself if the briefs were already refreshed in the last 3 days.
       - name: Check if briefs are fresh
         id: fresh
@@ -45,13 +49,17 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ONLY: ${{ inputs.only }}
+      - run: node scripts/lock.mjs lock
+        if: steps.fresh.outputs.skip != 'true'
+        env:
+          KJ_PASSWORD: ${{ secrets.KJ_PASSWORD }}
       - name: Save the new briefs
         if: steps.fresh.outputs.skip != 'true'
         run: |
-          if git diff --quiet -- data/news.json; then echo "No change"; exit 0; fi
+          if git diff --quiet -- data/news.enc.json; then echo "No change"; exit 0; fi
           git config user.name "wvfc-news-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/news.json
+          git add data/news.enc.json
           git commit -m "Refresh news briefs"
           git pull --rebase origin main
           git push
