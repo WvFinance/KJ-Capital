@@ -204,7 +204,7 @@ function historySeries(){
 }
 function renderHistory(box=$("#hist-body")){
   const pts=historySeries();
-  if(!pts){box.replaceChildren(emptyNote(S.picks.length?(S.picks.some(p=>p.entryDate)?"The chart fills in after the next daily price update.":"This chart needs the dates you bought each stock. Add them and it fills in.")::"Once you own stocks, this line shows your portfolio's value each day next to the same money in the S&P 500."));return;}
+  if(!pts){box.replaceChildren(emptyNote(S.picks.length?(S.picks.some(p=>p.entryDate)?"The chart fills in after the next daily price update.":"This chart needs the dates you bought each stock. Add them and it fills in."):"Once you own stocks, this line shows your portfolio's value each day next to the same money in the S&P 500."));return;}
   const W=Math.max(320,box.clientWidth||760),H=300,L=64,Rr=16,T=16,B=30;
   // Plot growth in %, (value / money put in) - 1, so buying a new stock doesn't make the line jump.
   for(const p of pts){p.c=p.club/p.inv-1;p.s=p.spy/p.inv-1;}
