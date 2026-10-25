@@ -147,7 +147,7 @@ function renderPicks(){
         el("div",{},el("div",{class:"k",text:"Invested"}),el("div",{class:"val",text:p.invested?fmt$(p.invested):"–"})),
         el("div",{},el("div",{class:"k",text:"Shares"}),el("div",{class:"val",text:p.shares?fmtShares(p.shares):"–"})),
         el("div",{},el("div",{class:"k",text:"Worth now"}),el("div",{class:"val",text:c&&c.value!=null?fmt$(c.value):"–"}),c&&c.gain!=null?el("div",{class:"meta",style:`color:var(--${cls(c.ret)})`,text:(c.gain>=0?"+":"−")+fmt$(Math.abs(c.gain))}):null)),
-      el("p",{class:"thesis"},el("b",{text:"Thesis: "}),p.thesis||""),
+      p.thesis?el("p",{class:"thesis"},el("b",{text:"Thesis: "}),p.thesis):null,
       d&&tot?el("div",{class:"debate"},el("div",{class:"eyebrow",text:`Won the debate vs ${d.opponent} · ${d.votesFor}–${d.votesAgainst}`}),
         el("div",{class:"vbar","aria-hidden":"true"},el("span",{style:`width:${d.votesFor/tot*100}%;background:var(--gold)`}),el("span",{style:`width:${d.votesAgainst/tot*100}%;background:var(--muted)`}))):null,
       p.pitchedBy?el("div",{class:"meta",text:"Added by "+p.pitchedBy}):null,
