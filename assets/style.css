@@ -350,3 +350,5 @@ svg.hist .endname{fill:var(--muted);font-size:11px}
 svg.hist .endval{font-size:13px;font-weight:600;font-family:var(--f-mono)}
 .histlegend i.dash{background:none;border-top:2px dashed var(--muted);height:0;border-radius:0;align-self:center}
 @media (max-width:600px){.histtip{position:static;transform:none;display:block;margin-bottom:8px;white-space:normal}}
+/* Sector list in two columns on wider screens */
+@media (min-width:760px){.seccol{max-width:900px}.seclegend{display:block;columns:2;column-gap:40px}.secrow{break-inside:avoid;margin-bottom:4px}}
