@@ -314,3 +314,25 @@ html.unlocked #gate{display:none}
 .gate-slogan::before,.gate-slogan::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--gold) 35%,transparent)}
 .gate-slogan i{width:4px;height:4px;border-radius:50%;background:var(--gold);flex:none}
 #gate-msg{margin:-16px 0 0}
+
+/* Today's move */
+.todaybar{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin:0 0 14px}
+.todaybar .tmove{font-family:var(--f-display);font-size:22px}
+.todaybar .up{color:var(--up)}.todaybar .down{color:var(--down)}.todaybar .flat{color:var(--flat)}
+
+/* Time range buttons on the growth chart */
+.ranges{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.ranges button{appearance:none;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:5px 12px;font:600 13px var(--f-body);cursor:pointer}
+.ranges button:hover{color:var(--ink)}
+.ranges button.on{background:var(--gold);border-color:var(--gold);color:var(--on-gold)}
+
+/* Upcoming events */
+#events-panel{margin-top:20px}
+.events{display:grid;gap:8px}
+.event{appearance:none;display:flex;gap:14px;align-items:flex-start;text-align:left;width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--ink);font:inherit;cursor:pointer}
+.event:hover{border-color:var(--gold)}
+.edate{display:grid;justify-items:center;min-width:56px;padding:4px 6px;border-radius:6px;background:var(--gold-soft);color:var(--gold);font-size:12px;flex:none}
+.edate b{font-family:var(--f-display);font-size:15px;color:var(--ink)}
+.edate.tbd b{color:var(--ink-2)}
+.etext{display:grid;gap:2px;min-width:0;font-size:14px;color:var(--ink-2)}
+.etext b{color:var(--ink)}

@@ -215,11 +215,19 @@ function historySeries(){
   return out.length?out:null;
 }
 function renderHistory(box=$("#hist-body")){
-  const pts=historySeries();
+  const allPts=historySeries();
+  // Time range buttons: each range shows growth from the first day in that range.
+  const RANGES=[["1W",7],["1M",30],["3M",91],["YTD","ytd"],["1Y",365],["All",0]];
+  let pts=allPts;const rk=S.range||"All";
+  if(allPts&&rk!=="All"){const last=new Date(allPts[allPts.length-1].day+"T12:00:00");const r=RANGES.find(x=>x[0]===rk)[1];
+    const from=r==="ytd"?last.getFullYear()+"-01-01":new Date(last.getTime()-r*864e5).toISOString().slice(0,10);
+    pts=allPts.filter(p=>p.day>=from);if(pts.length<2)pts=allPts.slice(-2);}
+  const rangeBar=el("div",{class:"ranges",role:"group","aria-label":"Time range"},RANGES.map(([k])=>el("button",{type:"button",class:k===rk?"on":"","aria-pressed":String(k===rk),text:k,onclick:()=>{S.range=k;renderHistory(box);}})));
   if(!pts){box.replaceChildren(emptyNote(S.picks.length?(S.picks.some(p=>p.entryDate)?"The chart fills in after the next daily price update.":"The chart starts once there are prices from the start date."):"Once you own stocks, this line shows your portfolio's value each day next to the same money in the S&P 500."));return;}
   const W=Math.max(320,box.clientWidth||760),H=300,L=64,Rr=16,T=16,B=30;
   // Plot growth in %, (value / money put in) - 1, so buying a new stock doesn't make the line jump.
-  for(const p of pts){p.c=p.club/p.inv-1;p.s=p.spy/p.inv-1;}
+  if(rk==="All")for(const p of pts){p.c=p.club/p.inv-1;p.s=p.spy/p.inv-1;}
+  else{const g0=pts[0].club/pts[0].inv,s0=pts[0].spy/pts[0].inv;for(const p of pts){p.c=p.club/p.inv/g0-1;p.s=p.spy/p.inv/s0-1;}}
   const vals=pts.flatMap(p=>[p.c,p.s,0]);let mn=Math.min(...vals),mx=Math.max(...vals);const pad=(mx-mn)*0.1||0.01;mn-=pad;mx+=pad;
   const x=i=>L+(pts.length===1?0.5:i/(pts.length-1))*(W-L-Rr),y=v=>T+(1-(v-mn)/(mx-mn))*(H-T-B);
   const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,class:"hist",role:"img","aria-label":"Your portfolio value compared with the S&P 500 over time"});
@@ -244,15 +252,46 @@ function renderHistory(box=$("#hist-body")){
     tip.hidden=false;const left=X*rc.width/W;tip.style.left=Math.min(Math.max(left,70),rc.width-70)+"px";});
   svg.addEventListener("pointerleave",hide);
   const diff=lastP.club-lastP.spy;
-  const summary=el("p",{class:"histsum"},"Your portfolio is ",el("b",{class:"gold",text:(lastP.c>=0?"up ":"down ")+fmtPct(Math.abs(lastP.c)).slice(1)}),". The same money in the S&P 500 would be ",el("b",{text:(lastP.s>=0?"up ":"down ")+fmtPct(Math.abs(lastP.s)).slice(1)}),". ",
+  const rangeTxt={"1W":"Over the past week, your","1M":"Over the past month, your","3M":"Over the past 3 months, your","YTD":"This year, your","1Y":"Over the past year, your"}[rk];
+  const gap=lastP.c-lastP.s;
+  const summary=rangeTxt?el("p",{class:"histsum"},rangeTxt+" portfolio is ",el("b",{class:"gold",text:(lastP.c>=0?"up ":"down ")+fmtPct(Math.abs(lastP.c)).slice(1)}),". The S&P 500 is ",el("b",{text:(lastP.s>=0?"up ":"down ")+fmtPct(Math.abs(lastP.s)).slice(1)}),". ",
+    el("span",{class:cls(gap),text:Math.abs(gap)<0.0005?"You're even with the market.":gap>0?`You're ahead by ${fmtPct(gap).slice(1)}.`:`You're behind by ${fmtPct(-gap).slice(1)}.`})):el("p",{class:"histsum"},"Your portfolio is ",el("b",{class:"gold",text:(lastP.c>=0?"up ":"down ")+fmtPct(Math.abs(lastP.c)).slice(1)}),". The same money in the S&P 500 would be ",el("b",{text:(lastP.s>=0?"up ":"down ")+fmtPct(Math.abs(lastP.s)).slice(1)}),". ",
     el("span",{class:cls(diff/lastP.inv),text:Math.abs(diff)<0.5?"You're even with the market.":diff>0?`You're ahead by ${fmt0(diff)}.`:`You're behind by ${fmt0(-diff)}.`}));
   const legend=el("div",{class:"legend histlegend"},el("span",{},el("i",{style:"background:var(--gold)"}),"Your portfolio"),el("span",{},el("i",{style:"background:var(--ink-2)"}),"Same money in the S&P 500"));
-  box.replaceChildren(summary,legend,el("div",{class:"histwrap"},svg,tip));
+  box.replaceChildren(rangeBar,summary,legend,el("div",{class:"histwrap"},svg,tip));
 }
 function renderBreakdown(){
   if(!S.loaded)return;if(S_view==="positions")renderPositions();else if(S_view==="sectors")renderSectors();else if(S_view==="history")renderHistory();
 }
-function renderPortfolio(){renderTiles();renderCompare();renderPicks();renderBreakdown();}
+/* ---------- Today's move and upcoming events ---------- */
+function renderToday(){
+  const box=$("#today"),d=S.prices.dates||[];if(!S.picks.length||d.length<2){box.hidden=true;return;}
+  const last=d[d.length-1],prev=d[d.length-2];let now=0,before=0;
+  for(const p of S.picks){if(p.entryDate&&p.entryDate>prev)continue;const sh=p.shares||(p.invested||0)/p.entryPrice;const a=closeOn(p.ticker,last),b=closeOn(p.ticker,prev);if(a==null||b==null)continue;now+=sh*a;before+=sh*b;}
+  if(!before){box.hidden=true;return;}
+  const ch=now-before,r=ch/before,sa=closeOn("SPY",last),sb=closeOn("SPY",prev);
+  const isToday=last===new Date().toLocaleDateString("en-CA",{timeZone:"America/New_York"});
+  const day=new Date(last+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
+  box.replaceChildren(el("span",{class:"eyebrow",text:isToday?"Today":"Last market day · "+day}),
+    el("b",{class:"tmove "+cls(r),text:`${ch>=0?"+":"−"}${fmt$(Math.abs(ch))} (${fmtPct(r,2)})`}),
+    sa&&sb?el("span",{class:"meta",text:`S&P 500 ${fmtPct(sa/sb-1,2)}`}):null);
+  box.hidden=false;
+}
+const MONS={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+// Pull the first "Oct 28" / "October 28, 2026" style date out of a brief's "coming up" text.
+function eventDate(t){const m=String(t||"").match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{1,2})(?!\d)(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?/i);
+  if(!m)return null;return new Date(m[3]?+m[3]:new Date().getFullYear(),MONS[m[1].slice(0,3).toLowerCase()],+m[2]);}
+function renderEvents(){
+  const panel=$("#events-panel"),box=$("#events");const held=new Map(S.picks.map(p=>[p.ticker,p]));
+  const today=new Date();today.setHours(0,0,0,0);
+  const rows=S.briefs.filter(b=>b.nextEvent&&held.has(b.ticker)).map(b=>({b,d:eventDate(b.nextEvent)})).filter(r=>!r.d||r.d>=today)
+    .sort((x,y)=>(x.d?x.d.getTime():Infinity)-(y.d?y.d.getTime():Infinity));
+  panel.hidden=!rows.length;if(!rows.length)return;
+  box.replaceChildren(...rows.map(({b,d})=>el("button",{type:"button",class:"event",onclick:()=>{S.newsTk=b.ticker;renderNews();showTab("news",true);}},
+    el("span",{class:"edate"+(d?"":" tbd")},d?el("b",{text:d.toLocaleDateString("en-US",{month:"short",day:"numeric"})}):el("b",{text:"Soon"}),el("span",{text:d?d.toLocaleDateString("en-US",{weekday:"short"}):"date TBD"})),
+    el("span",{class:"etext"},el("b",{text:b.ticker+" · "+(held.get(b.ticker).name||"")}),el("span",{text:b.nextEvent})))));
+}
+function renderPortfolio(){renderToday();renderTiles();renderCompare();renderEvents();renderPicks();renderBreakdown();}
 
 /* ---------- Search ---------- */
 function normSym(raw){const v=String(raw||"").trim().toUpperCase().replace(/\s+/g,"");if(!v)return null;if(!/^[A-Z0-9.:\-!_]{1,24}$/.test(v))return null;return v;}
