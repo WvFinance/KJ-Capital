@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WV Finance Club</title>
+<meta name="description" content="Waubonsie Valley Finance Club: our class portfolio, stock research and news briefs.">
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/style.css?v=2026102512">
+<script>
+// Club password screen. The password is checked by its SHA-256 hash (lowercased), so it isn't written here.
+// To change it: hash the new password in lowercase and replace WVFC_PASS below.
+window.WVFC_PASS="fa347c18e366bd1348b942438f2bd44dd392e9ccfb81af17856afcf20d5c226e";
+try{if(localStorage.getItem("wvfc-pass")===window.WVFC_PASS)document.documentElement.classList.add("unlocked");}catch(e){}
+</script>
+</head>
+<body>
+
+<div id="gate" role="dialog" aria-label="Enter the club password">
+  <form id="gate-form" autocomplete="off">
+    <img src="assets/logo.png" alt="Waubonsie Valley Finance Club" width="180" height="180">
+    <input id="gate-pass" type="password" placeholder="Club password" aria-label="Club password" autofocus>
+    <p id="gate-msg" role="alert"></p>
+  </form>
+</div>
+<script>
+(function(){
+  const form=document.getElementById("gate-form"),inp=document.getElementById("gate-pass"),msg=document.getElementById("gate-msg");
+  async function sha(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");}
+  form.addEventListener("submit",async e=>{e.preventDefault();
+    const h=await sha(inp.value.trim().toLowerCase());
+    if(h!==window.WVFC_PASS){msg.textContent="That's not the password. Try again.";inp.value="";inp.focus();form.classList.remove("shake");void form.offsetWidth;form.classList.add("shake");return;}
+    let saved=false;try{localStorage.setItem("wvfc-pass",h);saved=localStorage.getItem("wvfc-pass")===h;}catch(err){}
+    // Reload so the charts draw at full size; without storage, just open the page.
+    if(saved)location.reload();else document.documentElement.classList.add("unlocked");
+  });
+})();
+</script>
+
+<header class="mast">
+  <div class="wrap">
+    <a class="brand" href="#portfolio">
+      <img class="crest" src="assets/logo.png" alt="Waubonsie Valley Finance Club logo" width="58" height="58">
+      <div><h1>WV Finance Club</h1><p>Waubonsie Valley · Portfolio · Research · News</p></div>
+    </a>
+    <div class="datanote">
+      <span class="chip live"><span class="dot"></span>Market data from TradingView</span>
+      <span class="chip asof" id="news-asof">News briefs</span>
+    </div>
+  </div>
+</header>
+
+<div class="tape" id="tape" aria-label="Market ticker"></div>
+
+<nav class="tabs" aria-label="Sections">
+  <div class="wrap" role="tablist">
+    <button class="tab hasmenu" role="tab" id="tab-portfolio" aria-controls="portfolio" aria-selected="true" aria-haspopup="menu" aria-expanded="false" data-tab="portfolio">Class Portfolio<span class="count" id="cnt-picks"></span><span class="caret" aria-hidden="true"></span></button>
+    <button class="tab" role="tab" id="tab-search" aria-controls="search" aria-selected="false" data-tab="search">Search</button>
+    <button class="tab" role="tab" id="tab-news" aria-controls="news" aria-selected="false" data-tab="news">News<span class="count" id="cnt-news"></span></button>
+  </div>
+  <div class="tabmenu" id="pf-menu" role="menu" hidden>
+    <button role="menuitem" data-view="overview">Overview</button>
+    <button role="menuitem" data-view="positions">All positions</button>
+    <button role="menuitem" data-view="sectors">What we own by sector</button>
+    <button role="menuitem" data-view="history">Club vs S&amp;P 500 over time</button>
+  </div>
+</nav>
+
+<main>
+<div class="wrap">
+
+<!-- PORTFOLIO -->
+<section role="tabpanel" id="portfolio" aria-labelledby="tab-portfolio">
+ <div class="pview" id="pv-overview">
+  <div class="sechead">
+    <div>
+      <h2>Class Portfolio</h2>
+      <p class="sub">Every stock here won a club debate. Members pitch a stock, debate another member, and the audience votes. The winner joins the portfolio with the audience's reasons as its thesis.</p>
+    </div>
+  </div>
+  <div class="tiles" id="tiles"></div>
+  <p class="notice" id="price-note" hidden></p>
+  <div class="panel" id="cmp-panel" hidden>
+    <div class="sechead"><div><div class="eyebrow">How much our money has grown</div><h3 class="h3">Our portfolio vs the S&amp;P 500</h3></div></div>
+    <div class="compare" id="cmp"></div>
+  </div>
+ </div>
+ <div class="pview" id="pv-positions" hidden>
+  <div class="sechead"><div><h2>All positions</h2><p class="sub">Every stock the club owns, what we paid, and what it's worth now.</p></div></div>
+  <div id="picks"></div>
+  <details class="drop" id="drop-pos"><summary><span>All positions table</span></summary><div class="dropbody" id="pos-body"></div></details>
+ </div>
+ <div class="pview" id="pv-sectors" hidden>
+  <div class="sechead"><div><h2>What we own by sector</h2><p class="sub">How our money is split across types of business, like Tech or Banks. Owning a mix helps if one area has a bad year.</p></div></div>
+  <div class="panel" id="sec-body"></div>
+ </div>
+ <div class="pview" id="pv-history" hidden>
+  <div class="sechead"><div><h2>Club vs S&amp;P 500 over time</h2><p class="sub">Our portfolio's value each day, next to what the same money would be worth in the S&amp;P 500. It shows how much we have gained or lost, in %, since we started.</p></div></div>
+  <div class="panel" id="hist-body"></div>
+ </div>
+</section>
+
+<!-- SEARCH -->
+<section role="tabpanel" id="search" aria-labelledby="tab-search" hidden>
+  <div class="panel searchpanel">
+    <form class="searchbar" id="searchform" role="search">
+      <svg class="mag" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input class="inp" id="q" type="search" placeholder="Search any stock by ticker, like NVDA, COST or F" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Stock ticker">
+      <button class="btn primary" type="submit">Search</button>
+    </form>
+    <div class="quick" id="quick"></div>
+    <p class="hint">Don't know the ticker? Click the stock name at the top left of the chart to search by company name.</p>
+  </div>
+  <div class="panel symbolinfo" id="tv-info"></div>
+  <div class="stock">
+    <div class="panel chartpanel"><div class="tvbox chart" id="tv-chart"></div></div>
+    <div class="side">
+      <div class="panel">
+        <div class="sechead" style="margin-bottom:8px"><div class="eyebrow">My watchlist</div><button class="btn small" id="wl-toggle" type="button">Add to watchlist</button></div>
+        <div class="wl" id="wl"></div>
+        <p class="meta" style="margin:8px 0 0">Saved on this device only.</p>
+      </div>
+    </div>
+  </div>
+  <div class="panel brief" id="s-brief" hidden></div>
+  <div class="two">
+  <details class="drop" id="drop-fin">
+    <summary><span>Key financials</span><span class="sym" data-sym></span></summary>
+    <div class="tvbox fin" id="tv-fin"></div>
+  </details>
+  <div class="feedcol">
+  <div class="panel latest3" id="latest3" hidden></div>
+  <details class="drop" id="drop-feed">
+    <summary><span>More headlines</span><span class="sym" data-sym></span></summary>
+    <div class="tvbox feed" id="tv-feed"></div>
+  </details>
+  </div>
+  </div>
+</section>
+
+<!-- NEWS -->
+<section role="tabpanel" id="news" aria-labelledby="tab-news" hidden>
+  <div class="panel" id="news-meter-panel" hidden>
+    <div class="sechead" style="margin-bottom:8px"><div class="eyebrow">How the news feels overall</div><div class="legend" id="news-legend"></div></div>
+    <div class="meter" id="news-meter"></div>
+  </div>
+  <div class="newsgrid">
+    <div class="nlist" id="nlist"></div>
+    <div class="brief-col">
+      <div class="panel brief" id="brief"></div>
+      <div class="panel"><div class="eyebrow" style="margin-bottom:8px" id="feed-label">Live headlines</div><div class="tvbox feed" id="tv-newsfeed"></div></div>
+    </div>
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><strong>For education only, not financial advice.</strong> This site is a learning tool for the Waubonsie Valley Finance Club. Nothing here is a recommendation to buy or sell any security.</div>
+    <div><strong>About the data:</strong> charts, quotes, financials and headlines come from <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView</a>, and portfolio values use daily closing prices from Yahoo Finance. Some quotes may be delayed. News briefs are written by Claude from the linked articles.</div>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="config.js?v=2026102512"></script>
+<script src="assets/app.js?v=2026102512"></script>
+</body>
+</html>

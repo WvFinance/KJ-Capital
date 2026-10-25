@@ -1,0 +1,57 @@
+name: Refresh news briefs
+
+# Every Sunday evening, Claude rewrites the S&P 500, Nasdaq and portfolio briefs.
+# Uses the ANTHROPIC_API_KEY repository secret, so each run spends Claude credit.
+on:
+  schedule:
+    - cron: "0 23 * * 0"   # Sunday 6pm Central (5pm in winter)
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Only these tickers, like MSFT,SP500 (leave empty for all)"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-news
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The Sunday run skips itself if the briefs were already refreshed in the last 3 days.
+      - name: Check if briefs are fresh
+        id: fresh
+        if: github.event_name == 'schedule'
+        run: |
+          last=$(node -e 'console.log(require("./data/news.json").updated||"")')
+          age=$(( ( $(date -u +%s) - $(date -u -d "$last" +%s) ) / 86400 ))
+          echo "Briefs last updated $last ($age days ago)"
+          if [ "$age" -lt 3 ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-node@v4
+        if: steps.fresh.outputs.skip != 'true'
+        with:
+          node-version: 22
+      - run: npm ci
+        if: steps.fresh.outputs.skip != 'true'
+        working-directory: brief-server
+      - run: node scripts/refresh-news.mjs
+        if: steps.fresh.outputs.skip != 'true'
+        working-directory: brief-server
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ONLY: ${{ inputs.only }}
+      - name: Save the new briefs
+        if: steps.fresh.outputs.skip != 'true'
+        run: |
+          if git diff --quiet -- data/news.json; then echo "No change"; exit 0; fi
+          git config user.name "wvfc-news-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/news.json
+          git commit -m "Refresh news briefs"
+          git pull --rebase origin main
+          git push
