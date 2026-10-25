@@ -308,5 +308,9 @@ html.unlocked #gate{display:none}
 .pickrow[open]>summary{border-bottom:1px solid var(--line)}
 .pickrow>.pick{border:0;background:none;padding:14px}
 
-/* Slogan under the password box */
-.gate-slogan{margin:-18px 0 0;color:var(--ink-2);font-size:15px;letter-spacing:.04em;text-align:center}
+/* Slogan under the password box: small spaced capitals with thin lines on each side */
+#gate{background:radial-gradient(120% 70% at 50% 0%,color-mix(in srgb,var(--mast) 85%,transparent),#000 70%)}
+.gate-slogan{margin:-8px 0 0;display:flex;align-items:center;gap:12px;width:100%;font-family:var(--f-display);font-size:12px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);white-space:nowrap}
+.gate-slogan::before,.gate-slogan::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--gold) 35%,transparent)}
+.gate-slogan i{width:4px;height:4px;border-radius:50%;background:var(--gold);flex:none}
+#gate-msg{margin:-16px 0 0}

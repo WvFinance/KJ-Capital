@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="assets/kj-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=2026102523">
+<link rel="stylesheet" href="assets/style.css?v=2026102524">
 <script>
 // Password screen. The password unlocks the data files (see scripts/lock.mjs), so it isn't stored anywhere in the site.
 // This device remembers the unlocked key until the password changes.
@@ -21,8 +21,8 @@ try{if(localStorage.getItem("kj-key"))document.documentElement.classList.add("un
   <form id="gate-form" autocomplete="off">
     <img src="assets/kj-logo.png" alt="KJ Capital: Investing, simplified." width="900" height="290">
     <input id="gate-pass" type="password" placeholder="Password" aria-label="Password" autofocus>
+    <p class="gate-slogan" id="gate-slogan"><span>Here for you</span><i aria-hidden="true"></i><span>Made for you</span></p>
     <p id="gate-msg" role="alert"></p>
-    <p class="gate-slogan" id="gate-slogan">Here for you. Made for you.</p>
   </form>
 </div>
 <script>
@@ -167,7 +167,7 @@ try{if(localStorage.getItem("kj-key"))document.documentElement.classList.add("un
 </footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="config.js?v=2026102523"></script>
-<script src="assets/app.js?v=2026102523"></script>
+<script src="config.js?v=2026102524"></script>
+<script src="assets/app.js?v=2026102524"></script>
 </body>
 </html>
