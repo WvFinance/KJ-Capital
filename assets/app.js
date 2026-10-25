@@ -87,7 +87,7 @@ function renderTape(){
 function lastClose(tk){const c=S.prices.closes&&S.prices.closes[tk];if(!c)return null;for(let i=c.length-1;i>=0;i--)if(c[i]!=null)return c[i];return null;}
 function closeOn(tk,date){const c=S.prices.closes&&S.prices.closes[tk],d=S.prices.dates||[];if(!c)return null;let v=null;for(let i=0;i<d.length&&d[i]<=date;i++)if(c[i]!=null)v=c[i];return v;}
 function priceOf(tk){const q=S.quotes[tk];return q?q.c:lastClose(tk);}
-function spyEntry(p){return p.spyEntryPrice||closeOn("SPY",p.entryDate);}
+function spyEntry(p){return p.spyEntryPrice||(p.entryDate?closeOn("SPY",p.entryDate):null);}
 function calc(p){
   const cur=priceOf(p.ticker),spyNow=priceOf("SPY");if(cur==null)return null;const q=S.quotes[p.ticker];
   const ret=cur/p.entryPrice-1;const se=spyEntry(p);const spyRet=spyNow&&se?spyNow/se-1:null;
@@ -106,8 +106,8 @@ function renderTiles(){
   box.append(
     tile("Money invested",S.picks.length?fmt0(inv):"–",`${S.picks.length} ${S.picks.length===1?"stock":"stocks"} in the portfolio`),
     tile("Worth now",val==null?"–":fmt0(val),val==null?"live value":`${sgn(val-inv)} (${fmtPct(val/inv-1)})`,val==null?"":cls(val/inv-1)),
-    tile("Same money in the S&P 500",spyV==null?"–":fmt0(spyV),spyV==null?"what an index fund did":`${sgn(spyV-inv)} (${fmtPct(spyV/inv-1)})`,spyV==null?"":cls(spyV/inv-1)),
-    tile("Beating the market",cs.length?`${beating} of ${cs.length}`:"–",spyV!=null?((val-spyV)>=0?`you lead by ${fmt0(val-spyV)}`:`you trail by ${fmt0(spyV-val)}`):"picks ahead of the S&P 500"));
+    tile("Same money in the S&P 500",spyV==null?"–":fmt0(spyV),spyV==null?(S.picks.length&&!S.picks.some(p=>p.entryDate)?"needs your buy dates":"what an index fund did"):`${sgn(spyV-inv)} (${fmtPct(spyV/inv-1)})`,spyV==null?"":cls(spyV/inv-1)),
+    tile("Beating the market",cs.some(c=>c.alpha!=null)?`${beating} of ${cs.length}`:"–",spyV!=null?((val-spyV)>=0?`you lead by ${fmt0(val-spyV)}`:`you trail by ${fmt0(spyV-val)}`):"picks ahead of the S&P 500"));
   $("#cnt-picks").textContent=S.picks.length?String(S.picks.length):"";
   const note=$("#price-note");
   if(S.picks.length&&!all){note.hidden=false;note.textContent="Prices for a new pick show up after the next daily price update, usually within a few minutes.";}
@@ -138,7 +138,7 @@ function renderPicks(){
         c?el("div",{},el("div",{class:"price-big",text:fmt$(c.cur)}),el("div",{style:"text-align:right"},el("span",{class:"pill "+cls(c.ret),text:arrow(c.ret)+" "+fmtPct(c.ret)}))):null),
       mini,
       el("div",{class:"kv"},
-        el("div",{},el("div",{class:"k",text:"Bought"}),el("div",{class:"val",text:fmt$(p.entryPrice)}),el("div",{class:"meta",text:fmtDate(p.entryDate)})),
+        el("div",{},el("div",{class:"k",text:"Bought"}),el("div",{class:"val",text:fmt$(p.entryPrice)}),el("div",{class:"meta",text:p.entryDate?fmtDate(p.entryDate):"Average cost"})),
         el("div",{},el("div",{class:"k",text:"S&P 500 since"}),el("div",{class:"val",text:c&&c.spyRet!=null?fmtPct(c.spyRet):"–"})),
         el("div",{},el("div",{class:"k",text:"vs market"}),el("div",{class:"val"},c&&c.alpha!=null?el("span",{class:"pill "+cls(c.alpha),text:(c.alpha>=0?"Ahead ":"Behind ")+fmtPct(Math.abs(c.alpha)).slice(1)}):"–")),
         el("div",{},el("div",{class:"k",text:"Invested"}),el("div",{class:"val",text:p.invested?fmt$(p.invested):"–"})),
@@ -204,7 +204,7 @@ function historySeries(){
 }
 function renderHistory(box=$("#hist-body")){
   const pts=historySeries();
-  if(!pts){box.replaceChildren(emptyNote(S.picks.length?"The chart fills in after the next daily price update.":"Once you own stocks, this line shows your portfolio's value each day next to the same money in the S&P 500."));return;}
+  if(!pts){box.replaceChildren(emptyNote(S.picks.length?(S.picks.some(p=>p.entryDate)?"The chart fills in after the next daily price update.":"This chart needs the dates you bought each stock. Add them and it fills in.")::"Once you own stocks, this line shows your portfolio's value each day next to the same money in the S&P 500."));return;}
   const W=Math.max(320,box.clientWidth||760),H=300,L=64,Rr=16,T=16,B=30;
   // Plot growth in %, (value / money put in) - 1, so buying a new stock doesn't make the line jump.
   for(const p of pts){p.c=p.club/p.inv-1;p.s=p.spy/p.inv-1;}
@@ -352,7 +352,7 @@ async function boot(){
   // A saved key that no longer works means the password changed: forget it and show the password screen.
   if([pf,nw,px].some(r=>r.status==="rejected"&&r.reason&&r.reason.locked)){try{localStorage.removeItem("kj-key");}catch(e){}location.reload();return;}
   if(px.status==="fulfilled"&&px.value&&px.value.closes)S.prices=px.value;
-  if(pf.status==="fulfilled")S.picks=(pf.value.picks||[]).filter(p=>p.ticker&&p.entryPrice>0&&p.entryDate);
+  if(pf.status==="fulfilled")S.picks=(pf.value.picks||[]).filter(p=>p.ticker&&p.entryPrice>0);
   if(nw.status==="fulfilled"){S.briefs=nw.value.briefs||[];if(nw.value.updated)$("#news-asof").textContent="News briefs updated "+fmtDate(nw.value.updated);}
   S.loaded=true;renderTape();renderPortfolio();renderNews();
   showTab(location.hash.slice(1)||"portfolio");
