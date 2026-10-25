@@ -165,7 +165,7 @@ function renderPicks(){
   wrap.append(grid);
 }
 /* ---------- Portfolio dropdowns ---------- */
-const SECTOR_COLORS=["#3987e5","#d95926","#199e70","#c98500","#d55181","#008300","#9085e9","#e66767"];
+const SECTOR_COLORS=["#3987e5","#d95926","#199e70","#c98500","#d55181","#008300","#9085e9","#e66767","#2fa8b8","#a3a8b0"];
 const emptyNote=t=>el("p",{class:"meta dropnote",text:t});
 function renderPositions(){
   const box=$("#pos-body");const rows=S.picks.map(p=>({p,c:calc(p)}));
@@ -182,24 +182,53 @@ function renderPositions(){
   const head=el("thead",{},el("tr",{},["Ticker","Name","Sector","Shares","Bought at","Price now","Worth now","Gain $","Gain %","% of portfolio"].map((h,i)=>el("th",{class:i>2?"num":"",text:h}))));
   box.replaceChildren(el("div",{class:"tablewrap"},el("table",{class:"pos"},head,tbody)));
 }
+// Rough sector split inside each fund, from the funds' published sector weights (approximate, rounded).
+// Communication companies like Google and Meta count as Tech, to match how the site labels those stocks.
+const FUND_SECTORS={
+  SPYM:{"Tech":44,"Banks & finance":13,"Shopping":10,"Health":9,"Industrials":8,"Everyday goods":5,"Energy":3,"Utilities":2.5,"Real estate":2,"Materials":2},
+  QQQM:{"Tech":66,"Shopping":13,"Everyday goods":5,"Health":5,"Industrials":5,"Utilities":1.5,"Banks & finance":1,"Materials":1,"Energy":0.5},
+  IOO:{"Tech":49,"Shopping":11,"Banks & finance":10,"Health":10,"Everyday goods":6,"Industrials":5,"Energy":5,"Materials":2,"Utilities":1},
+  QTUM:{"Tech":85,"Industrials":15},
+  UFO:{"Space":100}};
 function renderSectors(){
-  const box=$("#sec-body");const by={};
-  for(const p of S.picks){const c=calc(p);const v=c&&c.value!=null?c.value:(p.invested||0);if(v>0)by[p.sector||"Other"]=(by[p.sector||"Other"]||0)+v;}
+  const box=$("#sec-body");const by={},from={};
+  const add=(sec,v,label)=>{by[sec]=(by[sec]||0)+v;(from[sec]=from[sec]||[]).push([label,v]);};
+  let looked=false;
+  for(const p of S.picks){const c=calc(p);const v=c&&c.value!=null?c.value:(p.invested||0);if(!(v>0))continue;
+    const fs=FUND_SECTORS[p.ticker];
+    if(fs){looked=true;const t=Object.values(fs).reduce((s,x)=>s+x,0);for(const[sec,w]of Object.entries(fs))add(sec,v*w/t,`Inside ${p.ticker} (fund)`);}
+    else add(p.sector||"Other",v,`${p.ticker}${p.name?" · "+p.name:""}`);}
   let parts=Object.entries(by).sort((a,b)=>b[1]-a[1]);
   if(!parts.length){box.replaceChildren(emptyNote("The pie fills in once you own a stock. Each slice is a type of business, like Tech or Banks."));return;}
-  if(parts.length>8){const rest=parts.slice(7).reduce((s,x)=>s+x[1],0);parts=parts.slice(0,7).concat([["Other",rest]]);}
-  const total=parts.reduce((s,x)=>s+x[1],0);const R=90,r0=56,C=110;
+  const total=parts.reduce((s,x)=>s+x[1],0);
+  // Slices under 1% (and anything past the 9th) go into one "Other" slice, so the pie stays readable.
+  const keep=[],rest=[];parts.forEach((x,i)=>(x[0]!=="Other"&&x[1]/total>=0.01&&i<9?keep:rest).push(x));
+  if(rest.length){const v=rest.reduce((s,x)=>s+x[1],0);keep.push(["Other",v]);from.Other=rest.map(([n,v])=>[n,v]);}
+  parts=keep;
+  const R=90,r0=56,C=110;
   const svg=sv("svg",{viewBox:"0 0 220 220",class:"donut",role:"img","aria-label":"What you own by sector"});
+  const rows=[],slices=[];
   let a=-Math.PI/2;
-  parts.forEach(([name,v],i)=>{const frac=v/total;const col=SECTOR_COLORS[i%SECTOR_COLORS.length];
-    if(frac>=0.9999){svg.append(sv("circle",{cx:C,cy:C,r:(R+r0)/2,fill:"none",stroke:col,"stroke-width":R-r0}));}
+  parts.forEach(([name,v],i)=>{const frac=v/total;const col=SECTOR_COLORS[i%SECTOR_COLORS.length];let node;
+    if(frac>=0.9999)node=sv("circle",{cx:C,cy:C,r:(R+r0)/2,fill:"none",stroke:col,"stroke-width":R-r0});
     else{const b=a+frac*Math.PI*2,big=frac>0.5?1:0,P=(rad,ang)=>`${C+rad*Math.cos(ang)} ${C+rad*Math.sin(ang)}`;
-      const path=sv("path",{d:`M${P(R,a)}A${R} ${R} 0 ${big} 1 ${P(R,b)}L${P(r0,b)}A${r0} ${r0} 0 ${big} 0 ${P(r0,a)}Z`,fill:col,stroke:"var(--surface)","stroke-width":2});
-      const t=sv("title");t.textContent=`${name}: ${Math.round(frac*100)}%`;path.append(t);svg.append(path);a=b;}});
-  const mid=sv("text",{x:C,y:C-2,"text-anchor":"middle",class:"donut-n"});mid.textContent=String(parts.length);
-  const sub=sv("text",{x:C,y:C+18,"text-anchor":"middle",class:"donut-s"});sub.textContent=parts.length===1?"sector":"sectors";svg.append(mid,sub);
-  const legend=el("ul",{class:"seclegend"},parts.map(([name,v],i)=>el("li",{},el("i",{style:`background:${SECTOR_COLORS[i%SECTOR_COLORS.length]}`}),el("span",{text:name}),el("b",{text:Math.round(v/total*100)+"%"}),el("span",{class:"meta",text:fmt0(v)}))));
-  box.replaceChildren(el("div",{class:"secwrap"},svg,legend));
+      node=sv("path",{d:`M${P(R,a)}A${R} ${R} 0 ${big} 1 ${P(R,b)}L${P(r0,b)}A${r0} ${r0} 0 ${big} 0 ${P(r0,a)}Z`,fill:col,stroke:"var(--surface)","stroke-width":2});a=b;}
+    const t=sv("title");t.textContent=`${name}: ${Math.round(frac*100)}%`;node.append(t);node.classList.add("slice");
+    node.addEventListener("click",()=>{rows[i].open=!rows[i].open;});svg.append(node);slices.push(node);});
+  // The center shows your total value, or the open sector's value.
+  const mid=sv("text",{x:C,y:C+4,"text-anchor":"middle",class:"donut-n"}),sub=sv("text",{x:C,y:C+24,"text-anchor":"middle",class:"donut-s"});svg.append(mid,sub);
+  const setMid=(v,label)=>{const t=fmt0(v);mid.textContent=t;mid.setAttribute("font-size",t.length>7?22:t.length>6?25:28);sub.textContent=label;};
+  setMid(total,"total value");
+  const legend=el("div",{class:"seclegend"},parts.map(([name,v],i)=>{
+    const list=(from[name]||[]).slice().sort((x,y)=>y[1]-x[1]);
+    const d=el("details",{class:"secrow"},el("summary",{},el("i",{style:`background:${SECTOR_COLORS[i%SECTOR_COLORS.length]}`}),el("span",{text:name}),el("b",{text:Math.round(v/total*100)+"%"}),el("span",{class:"meta",text:fmt0(v)})),
+      el("ul",{class:"secitems"},list.map(([n,x])=>el("li",{},el("span",{text:n}),el("span",{class:"meta",text:x<1?"<$1":fmt0(x)})))));
+    // Only one row open at a time; the matching slice stands out while its row is open.
+    d.addEventListener("toggle",()=>{if(d.open)rows.forEach(o=>{if(o!==d)o.open=false;});slices.forEach((s,j)=>s.classList.toggle("dim",rows.some(o=>o.open)&&!rows[j].open));
+      const k=rows.findIndex(o=>o.open);if(k<0)setMid(total,"total value");else setMid(parts[k][1],parts[k][0]);});
+    rows.push(d);return d;}));
+  const note=looked?el("p",{class:"meta secnote",text:"Your funds are split into the types of business they hold, so this shows what you really own. Fund splits are approximate. Tap a slice or a row to see what's in it."}):el("p",{class:"meta secnote",text:"Tap a slice or a row to see what's in it."});
+  box.replaceChildren(el("div",{class:"secwrap"},svg,el("div",{class:"seccol"},legend,note)));
 }
 function historySeries(){
   const d=S.prices.dates||[],cl=S.prices.closes||{};if(!d.length||!cl.SPY)return null;

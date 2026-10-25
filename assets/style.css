@@ -183,12 +183,21 @@ table.pos th{text-align:left;font-weight:600;color:var(--ink-2);font-size:12px;t
 table.pos td{padding:10px;border-bottom:1px solid var(--line)}
 table.pos .num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 table.pos td.up{color:var(--up)}table.pos td.down{color:var(--down)}
-.secwrap{display:flex;gap:32px;align-items:center;flex-wrap:wrap}
-svg.donut{width:220px;height:220px;flex:none}
-.donut-n{fill:var(--ink);font-family:var(--f-display);font-weight:800;font-size:34px}
+.secwrap{display:flex;flex-direction:column;gap:28px;align-items:center}
+svg.donut{width:min(340px,100%);height:auto;flex:none}
+.donut-n{fill:var(--ink);font-family:var(--f-display);font-weight:800}
 .donut-s{fill:var(--ink-2);font-size:13px}
-.seclegend{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:16px;min-width:220px}
-.seclegend li{display:grid;grid-template-columns:14px 1fr auto auto;gap:10px;align-items:center}
+.seclegend{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:16px;min-width:220px}
+.seccol{width:100%;max-width:560px}
+.secrow summary{display:grid;grid-template-columns:14px 1fr auto 64px;gap:10px;align-items:center;cursor:pointer;list-style:none;padding:4px 6px;border-radius:6px}
+.secrow summary::-webkit-details-marker{display:none}
+.secrow summary:hover,.secrow[open] summary{background:var(--surface-2)}
+.secrow summary .meta{text-align:right}
+.secitems{list-style:none;margin:6px 0 4px 30px;padding:0;display:grid;gap:4px;font-size:14px}
+.secitems li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:3px 6px 3px 0}
+.secnote{margin:14px 0 0;font-size:13px}
+svg.donut .slice{cursor:pointer;transition:opacity .15s}
+svg.donut .slice.dim{opacity:.3}
 .seclegend i{width:14px;height:14px;border-radius:3px}
 .seclegend b{font-family:var(--f-mono)}
 .histsum{margin:0 0 12px;font-size:16px}.histsum .gold{color:var(--gold)}
@@ -243,7 +252,7 @@ details.drop>summary{padding:20px 28px}
 table.pos td{padding:14px 12px}
 table.pos th{padding:10px 12px}
 .histsum{margin-bottom:18px}
-.seclegend{gap:14px}
+.seclegend{gap:6px}
 .tabs .tab{padding:16px 18px 14px}
 @media (max-width:600px){
   .wrap{padding-left:16px;padding-right:16px}
