@@ -412,7 +412,7 @@ async function boot(){
   if(S.trackFrom)for(const p of S.picks)if(!p.entryDate)p.trackPx=closeOn(p.ticker,S.trackFrom);
   if(nw.status==="fulfilled"){S.briefs=nw.value.briefs||[];if(nw.value.updated)$("#news-asof").textContent="News briefs updated "+fmtDate(nw.value.updated);}
   S.loaded=true;renderTape();renderPortfolio();renderNews();
-  showTab(location.hash.slice(1)||"portfolio");
+  showTab("portfolio",true);
   if(S.picks.length&&CFG.finnhubKey){await Promise.all(S.picks.map(p=>quote(p.ticker)).concat([quote("SPY")]));renderTiles();renderCompare();renderPicks();renderBreakdown();}
 }
 if(document.documentElement.classList.contains("unlocked"))boot();else window.addEventListener("kj-unlocked",boot,{once:true});
