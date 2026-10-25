@@ -131,12 +131,14 @@ function renderPicks(){
         el("div",{},el("b",{text:"2. How it's doing"}),"Your gain or loss, next to the same money in the S&P 500."),
         el("div",{},el("b",{text:"3. The news"}),"A short, plain-English brief on each stock you own."))));
     return;}
-  const grid=el("div",{class:"picks"});
-  for(const p of S.picks){
+  // Biggest holdings first. On phones each stock is a compact row that opens to the full card.
+  const compact=phoneMQ.matches;const grid=el("div",{class:compact?"picks compact":"picks"});
+  const worth=p=>{const c=calc(p);return c&&c.value!=null?c.value:(p.invested||0);};
+  for(const p of [...S.picks].sort((a,b)=>worth(b)-worth(a))){
     const c=calc(p);const sym=p.symbol||p.ticker;const mini=el("div",{class:"mini"});
     const d=p.debate;const tot=d?(d.votesFor||0)+(d.votesAgainst||0):0;
-    grid.append(el("article",{class:"pick"},
-      el("div",{class:"pick-top"},
+    const card=el("article",{class:"pick"},
+      compact?null:el("div",{class:"pick-top"},
         el("div",{style:"min-width:0"},el("div",{class:"tk",text:p.ticker}),el("div",{class:"tk-name",text:p.name||""})),
         c?el("div",{},el("div",{class:"price-big",text:fmt$(c.cur)}),el("div",{style:"text-align:right"},el("span",{class:"pill "+cls(c.ret),text:arrow(c.ret)+" "+fmtPct(c.ret)}))):null),
       mini,
@@ -151,8 +153,14 @@ function renderPicks(){
       d&&tot?el("div",{class:"debate"},el("div",{class:"eyebrow",text:`Won the debate vs ${d.opponent} · ${d.votesFor}–${d.votesAgainst}`}),
         el("div",{class:"vbar","aria-hidden":"true"},el("span",{style:`width:${d.votesFor/tot*100}%;background:var(--gold)`}),el("span",{style:`width:${d.votesAgainst/tot*100}%;background:var(--muted)`}))):null,
       p.pitchedBy?el("div",{class:"meta",text:"Added by "+p.pitchedBy}):null,
-      el("div",{},el("button",{class:"btn small",text:"Full chart & news →",onclick:()=>{openStock(sym);showTab("search",true);}}))));
-    tv(mini,"mini-symbol-overview",{symbol:sym,width:"100%",height:170,dateRange:"12M",colorTheme:tvTheme(),isTransparent:true,autosize:false,largeChartUrl:""});
+      el("div",{},el("button",{class:"btn small",text:"Full chart & news →",onclick:()=>{openStock(sym);showTab("search",true);}})));
+    const drawMini=()=>tv(mini,"mini-symbol-overview",{symbol:sym,width:"100%",height:170,dateRange:"12M",colorTheme:tvTheme(),isTransparent:true,autosize:false,largeChartUrl:""});
+    if(!compact){grid.append(card);drawMini();continue;}
+    const row=el("details",{class:"pickrow"},el("summary",{},
+      el("div",{class:"pr-name"},el("span",{class:"tk",text:p.ticker}),el("span",{class:"tk-name",text:p.name||""})),
+      el("div",{class:"pr-val"},el("b",{text:c&&c.value!=null?fmt$(c.value):"–"}),c?el("span",{class:"pill "+cls(c.ret),text:arrow(c.ret)+" "+fmtPct(c.ret)}):null)),card);
+    row.addEventListener("toggle",()=>{if(row.open&&!mini.childElementCount)drawMini();},{once:false});
+    grid.append(row);
   }
   wrap.append(grid);
 }
@@ -266,7 +274,7 @@ function renderDrops(){
 }
 $("#drop-fin").addEventListener("toggle",renderDrops);$("#drop-feed").addEventListener("toggle",renderDrops);
 function renderQuick(){
-  const q=$("#quick");q.replaceChildren(el("span",{text:"Try:"}));
+  const q=$("#quick");if(!q)return;q.replaceChildren(el("span",{text:"Try:"}));
   const list=[...new Set(S.picks.map(p=>p.symbol||p.ticker).concat(["NASDAQ:AAPL","NASDAQ:NVDA","NASDAQ:MSFT","NASDAQ:AMZN","NASDAQ:TSLA","NYSE:JPM","NASDAQ:COST","NYSE:KO"]))].slice(0,10);
   list.forEach(s=>q.append(el("button",{class:"qchip"+(bare(s)===bare(S.tk)?" on":""),type:"button",text:bare(s),onclick:()=>openStock(s)})));
 }
@@ -351,6 +359,8 @@ function renderSearchBrief(){
 }
 
 /* ---------- Boot ---------- */
+const phoneMQ=matchMedia("(max-width:600px)");phoneMQ.addEventListener&&phoneMQ.addEventListener("change",()=>{if(S.loaded)renderPicks();});
+$("#logout").addEventListener("click",()=>{try{localStorage.removeItem("kj-key");}catch(e){}location.reload();});
 let rsT;window.addEventListener("resize",()=>{clearTimeout(rsT);rsT=setTimeout(()=>{renderCompare();if(S_view==="history")renderHistory();},120);});
 darkMQ.addEventListener&&darkMQ.addEventListener("change",()=>{rendered.search=null;rendered.news=null;renderPicks();const t=location.hash.slice(1);if(t==="search")renderSearch();if(t==="news")renderNewsFeed();});
 async function boot(){

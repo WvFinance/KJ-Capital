@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="assets/kj-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=2026102521">
+<link rel="stylesheet" href="assets/style.css?v=2026102522">
 <script>
 // Password screen. The password unlocks the data files (see scripts/lock.mjs), so it isn't stored anywhere in the site.
 // This device remembers the unlocked key until the password changes.
@@ -51,10 +51,7 @@ try{if(localStorage.getItem("kj-key"))document.documentElement.classList.add("un
       <img class="wordmark" src="assets/kj-logo.png" alt="" width="900" height="290">
       <h1 class="sr-only">KJ Capital</h1>
     </a>
-    <div class="datanote">
-      <span class="chip live"><span class="dot"></span>Market data from TradingView</span>
-      <span class="chip asof" id="news-asof">News briefs</span>
-    </div>
+    <button class="btn small logout" id="logout" type="button">Log out</button>
   </div>
 </header>
 
@@ -115,10 +112,6 @@ try{if(localStorage.getItem("kj-key"))document.documentElement.classList.add("un
 
 <!-- SEARCH -->
 <section role="tabpanel" id="search" aria-label="Stock search" hidden>
-  <div class="panel searchpanel">
-    <div class="quick" id="quick"></div>
-    <p class="hint">Don't know the ticker? Click the stock name at the top left of the chart to search by company name.</p>
-  </div>
   <div class="panel symbolinfo" id="tv-info"></div>
   <div class="stock">
     <div class="panel chartpanel"><div class="tvbox chart" id="tv-chart"></div></div>
@@ -167,12 +160,13 @@ try{if(localStorage.getItem("kj-key"))document.documentElement.classList.add("un
 <footer>
   <div class="wrap">
     <div><strong>For information only, not financial advice.</strong> Nothing here is a recommendation to buy or sell any security.</div>
+    <div id="news-asof">News briefs</div>
     <div><strong>About the data:</strong> charts, quotes, financials and headlines come from <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView</a>, and portfolio values use daily closing prices from Yahoo Finance. Some quotes may be delayed. News briefs are written by Claude from the linked articles.</div>
   </div>
 </footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="config.js?v=2026102521"></script>
-<script src="assets/app.js?v=2026102521"></script>
+<script src="config.js?v=2026102522"></script>
+<script src="assets/app.js?v=2026102522"></script>
 </body>
 </html>

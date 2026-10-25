@@ -291,3 +291,19 @@ html.unlocked #gate{display:none}
 .navsearch .inp:focus{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 25%,transparent)}
 .navsearch .mag{position:absolute;left:12px;top:50%;translate:0 -50%;width:15px;height:15px;color:var(--muted);pointer-events:none}
 @media (max-width:520px){.tabs .navrow{gap:6px}.navsearch{flex:1 1 0;min-width:92px}.navsearch .inp{padding-left:30px;font-size:14px}.navsearch .mag{left:10px}.tabs .tab{padding-inline:8px}.tab .caret{margin-left:6px}}
+
+/* Log out button in the header */
+.mast .logout{align-self:center;background:transparent;color:var(--band-ink);border-color:color-mix(in srgb,var(--band-ink) 35%,transparent)}
+.mast .logout:hover{border-color:var(--band-ink)}
+.mast .wrap{align-items:center}
+
+/* Compact holdings list on phones: tap a row to open the full card */
+.picks.compact{gap:8px}
+.pickrow{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.pickrow>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
+.pickrow>summary::-webkit-details-marker{display:none}
+.pickrow .pr-name{display:grid;min-width:0}
+.pickrow .pr-name .tk-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pickrow .pr-val{display:grid;justify-items:end;gap:4px;flex:none}
+.pickrow[open]>summary{border-bottom:1px solid var(--line)}
+.pickrow>.pick{border:0;background:none;padding:14px}
