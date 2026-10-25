@@ -281,3 +281,13 @@ html.unlocked #gate{display:none}
 #gate-msg{margin:-12px 0 0;min-height:1.4em;color:var(--down);font-size:14px}
 #gate-form.shake{animation:shake .35s}
 @keyframes shake{25%{translate:-8px}50%{translate:8px}75%{translate:-4px}}
+
+/* Search bar at the right of the tab rail (replaces the Search tab) */
+.tabs .navrow{display:flex;align-items:center;gap:12px;overflow:visible}
+.tablist{display:flex;gap:4px;overflow-x:auto;min-width:0}
+.navsearch{position:relative;margin-left:auto;flex:0 1 240px;min-width:120px}
+.navsearch .inp{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;font-size:15px;padding:8px 12px 8px 34px;text-transform:uppercase;outline:none}
+.navsearch .inp::placeholder{text-transform:none;color:var(--muted)}
+.navsearch .inp:focus{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 25%,transparent)}
+.navsearch .mag{position:absolute;left:12px;top:50%;translate:0 -50%;width:15px;height:15px;color:var(--muted);pointer-events:none}
+@media (max-width:520px){.tabs .navrow{gap:6px}.navsearch{flex:1 1 0;min-width:92px}.navsearch .inp{padding-left:30px;font-size:14px}.navsearch .mag{left:10px}.tabs .tab{padding-inline:8px}.tab .caret{margin-left:6px}}

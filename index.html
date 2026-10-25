@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="assets/kj-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=2026102520">
+<link rel="stylesheet" href="assets/style.css?v=2026102521">
 <script>
 // Password screen. The password unlocks the data files (see scripts/lock.mjs), so it isn't stored anywhere in the site.
 // This device remembers the unlocked key until the password changes.
@@ -61,10 +61,15 @@ try{if(localStorage.getItem("kj-key"))document.documentElement.classList.add("un
 <div class="tape" id="tape" aria-label="Market ticker"></div>
 
 <nav class="tabs" aria-label="Sections">
-  <div class="wrap" role="tablist">
+  <div class="wrap navrow">
+   <div class="tablist" role="tablist">
     <button class="tab hasmenu" role="tab" id="tab-portfolio" aria-controls="portfolio" aria-selected="true" aria-haspopup="menu" aria-expanded="false" data-tab="portfolio">Your Portfolio<span class="count" id="cnt-picks"></span><span class="caret" aria-hidden="true"></span></button>
-    <button class="tab" role="tab" id="tab-search" aria-controls="search" aria-selected="false" data-tab="search">Search</button>
     <button class="tab" role="tab" id="tab-news" aria-controls="news" aria-selected="false" data-tab="news">News<span class="count" id="cnt-news"></span></button>
+   </div>
+   <form class="navsearch" id="searchform" role="search">
+     <svg class="mag" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+     <input class="inp" id="q" type="search" placeholder="Search" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Search a stock by ticker, like NVDA">
+   </form>
   </div>
   <div class="tabmenu" id="pf-menu" role="menu" hidden>
     <button role="menuitem" data-view="overview">Overview</button>
@@ -109,13 +114,8 @@ try{if(localStorage.getItem("kj-key"))document.documentElement.classList.add("un
 </section>
 
 <!-- SEARCH -->
-<section role="tabpanel" id="search" aria-labelledby="tab-search" hidden>
+<section role="tabpanel" id="search" aria-label="Stock search" hidden>
   <div class="panel searchpanel">
-    <form class="searchbar" id="searchform" role="search">
-      <svg class="mag" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <input class="inp" id="q" type="search" placeholder="Search any stock by ticker, like NVDA, COST or F" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Stock ticker">
-      <button class="btn primary" type="submit">Search</button>
-    </form>
     <div class="quick" id="quick"></div>
     <p class="hint">Don't know the ticker? Click the stock name at the top left of the chart to search by company name.</p>
   </div>
@@ -172,7 +172,7 @@ try{if(localStorage.getItem("kj-key"))document.documentElement.classList.add("un
 </footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="config.js?v=2026102520"></script>
-<script src="assets/app.js?v=2026102520"></script>
+<script src="config.js?v=2026102521"></script>
+<script src="assets/app.js?v=2026102521"></script>
 </body>
 </html>

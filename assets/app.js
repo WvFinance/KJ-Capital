@@ -42,7 +42,7 @@ function showTab(name,push){
   if(!TABS.includes(name)){name="portfolio";}
   if(name==="portfolio"){for(const v of PVIEWS)$("#pv-"+v).hidden=v!==S_view;
     document.querySelectorAll("#pf-menu [data-view]").forEach(b=>b.classList.toggle("on",b.dataset.view===S_view));renderBreakdown();}
-  for(const t of TABS){$("#"+t).hidden=t!==name;$("#tab-"+t).setAttribute("aria-selected",String(t===name));}
+  for(const t of TABS){$("#"+t).hidden=t!==name;const tb=$("#tab-"+t);if(tb)tb.setAttribute("aria-selected",String(t===name));}
   if(push){try{history.replaceState(null,"","#"+(name==="portfolio"&&S_view!=="overview"?S_view:name))}catch(e){}}
   if(name==="search"&&rendered.search!==S.tk+tvTheme())renderSearch();
   if(name==="news")renderNewsFeed();
@@ -270,7 +270,7 @@ function renderQuick(){
   const list=[...new Set(S.picks.map(p=>p.symbol||p.ticker).concat(["NASDAQ:AAPL","NASDAQ:NVDA","NASDAQ:MSFT","NASDAQ:AMZN","NASDAQ:TSLA","NYSE:JPM","NASDAQ:COST","NYSE:KO"]))].slice(0,10);
   list.forEach(s=>q.append(el("button",{class:"qchip"+(bare(s)===bare(S.tk)?" on":""),type:"button",text:bare(s),onclick:()=>openStock(s)})));
 }
-$("#searchform").addEventListener("submit",e=>{e.preventDefault();const s=normSym($("#q").value);if(!s){toast("Type a ticker, like AAPL or NYSE:F");return;}$("#q").value="";$("#q").blur();openStock(s);});
+$("#searchform").addEventListener("submit",e=>{e.preventDefault();const s=normSym($("#q").value);if(!s){toast("Type a ticker, like AAPL or NYSE:F");return;}$("#q").value="";$("#q").blur();openStock(s);showTab("search",true);});
 function saveWatch(){store.set("wvfc.watch",JSON.stringify(S.watch));}
 function renderWatch(){
   const box=$("#wl");box.replaceChildren();const on=S.watch.some(w=>bare(w)===bare(S.tk));
