@@ -224,41 +224,56 @@ function renderHistory(box=$("#hist-body")){
     pts=allPts.filter(p=>p.day>=from);if(pts.length<2)pts=allPts.slice(-2);}
   const rangeBar=el("div",{class:"ranges",role:"group","aria-label":"Time range"},RANGES.map(([k])=>el("button",{type:"button",class:k===rk?"on":"","aria-pressed":String(k===rk),text:k,onclick:()=>{S.range=k;renderHistory(box);}})));
   if(!pts){box.replaceChildren(emptyNote(S.picks.length?(S.picks.some(p=>p.entryDate)?"The chart fills in after the next daily price update.":"The chart starts once there are prices from the start date."):"Once you own stocks, this line shows your portfolio's value each day next to the same money in the S&P 500."));return;}
-  const W=Math.max(320,box.clientWidth||760),H=300,L=64,Rr=16,T=16,B=30;
-  // Plot growth in %, (value / money put in) - 1, so buying a new stock doesn't make the line jump.
+  const W=Math.max(320,box.clientWidth||760),H=300,L=64,Rr=W<520?76:96,T=16,B=30;
+  // Growth in %, (value / money put in) - 1, so buying a new stock doesn't skew the comparison.
   if(rk==="All")for(const p of pts){p.c=p.club/p.inv-1;p.s=p.spy/p.inv-1;}
   else{const g0=pts[0].club/pts[0].inv,s0=pts[0].spy/pts[0].inv;for(const p of pts){p.c=p.club/p.inv/g0-1;p.s=p.spy/p.inv/s0-1;}}
-  const vals=pts.flatMap(p=>[p.c,p.s,0]);let mn=Math.min(...vals),mx=Math.max(...vals);const pad=(mx-mn)*0.1||0.01;mn-=pad;mx+=pad;
+  // Plot dollars. For a time range, the S&P line starts at your portfolio's value on the first day.
+  const base=rk==="All"?1:pts[0].club/pts[0].inv;for(const p of pts){p.cv=p.inv*base*(1+p.c);p.sv=p.inv*base*(1+p.s);p.iv=p.inv*base;}
+  const vals=pts.flatMap(p=>[p.cv,p.sv,p.iv]);let mn=Math.min(...vals),mx=Math.max(...vals);const pad=(mx-mn)*0.1||mx*0.01||1;mn=Math.max(0,mn-pad);mx+=pad;
   const x=i=>L+(pts.length===1?0.5:i/(pts.length-1))*(W-L-Rr),y=v=>T+(1-(v-mn)/(mx-mn))*(H-T-B);
-  const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,class:"hist",role:"img","aria-label":"Your portfolio value compared with the S&P 500 over time"});
-  const step=niceStep((mx-mn)/4);for(let v=Math.ceil(mn/step)*step;v<=mx;v+=step){const Y=y(v);svg.append(sv("line",{x1:L,x2:W-Rr,y1:Y,y2:Y,stroke:"var(--line)"}));const t=sv("text",{x:L-8,y:Y+4,"text-anchor":"end"});t.textContent=(v>0?"+":"")+Math.round(v*100*10)/10+"%";svg.append(t);}
-  svg.append(sv("line",{x1:L,x2:W-Rr,y1:y(0),y2:y(0),stroke:"var(--muted)","stroke-width":1.5}));
+  const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,class:"hist",role:"img","aria-label":"Your portfolio value in dollars compared with the same money in the S&P 500 over time"});
+  const fmtAx=v=>Math.abs(v)>=1e4?"$"+(v/1e3).toFixed(Math.abs(v)>=1e5?0:1)+"k":fmt0(v);
+  const step=niceStep((mx-mn)/4);for(let v=Math.ceil(mn/step)*step;v<=mx;v+=step){const Y=y(v);svg.append(sv("line",{x1:L,x2:W-Rr,y1:Y,y2:Y,stroke:"var(--line)"}));const t=sv("text",{x:L-8,y:Y+4,"text-anchor":"end"});t.textContent=fmtAx(v);svg.append(t);}
   // When the chart spans more than one year, label the axis by month and year, like "May '25".
   const multiYr=pts[0].day.slice(0,4)!==pts[pts.length-1].day.slice(0,4);
   const tickYr=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{month:"short"})+" '"+d.slice(2,4);
   const nt=Math.min(W<520?3:5,pts.length);for(let k=0;k<nt;k++){const i=nt===1?0:Math.round(k*(pts.length-1)/(nt-1));const t=sv("text",{x:x(i),y:H-8,"text-anchor":k===0?"start":k===nt-1?"end":"middle"});t.textContent=multiYr?tickYr(pts[i].day):fmtDate(pts[i].day).replace(/, \d{4}$/,"");svg.append(t);}
+  // Shade the gap between the lines: green where you're ahead of the S&P 500, red where you're behind.
+  for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],da=a.cv-a.sv,db=b.cv-b.sv;
+    const quad=(x1,c1,s1,x2,c2,s2,d)=>{if(Math.abs(d)<1e-9)return;svg.append(sv("polygon",{points:`${x1},${y(c1)} ${x2},${y(c2)} ${x2},${y(s2)} ${x1},${y(s1)}`,fill:d>0?"var(--up)":"var(--down)","fill-opacity":0.2}));};
+    if(da*db<0){const t=da/(da-db),xm=x(i)+t*(x(i+1)-x(i)),vm=a.cv+t*(b.cv-a.cv);quad(x(i),a.cv,a.sv,xm,vm,vm,da);quad(xm,vm,vm,x(i+1),b.cv,b.sv,db);}
+    else quad(x(i),a.cv,a.sv,x(i+1),b.cv,b.sv,da+db);}
   const line=(key,col,w)=>sv("path",{d:pts.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(p[key]).toFixed(1)).join(""),fill:"none",stroke:col,"stroke-width":w,"stroke-linejoin":"round","stroke-linecap":"round"});
-  svg.append(line("s","var(--ink-2)",2),line("c","var(--gold)",3));
-  const lastP=pts[pts.length-1];svg.append(sv("circle",{cx:x(pts.length-1),cy:y(lastP.c),r:4,fill:"var(--gold)"}),sv("circle",{cx:x(pts.length-1),cy:y(lastP.s),r:3.5,fill:"var(--ink-2)"}));
+  // A dashed step line shows the money put in (for a range: the starting value plus new buys), so jumps read as new buys, not gains.
+  const pi=line("iv","var(--muted)",1.5);pi.setAttribute("stroke-dasharray","4 4");svg.append(pi);
+  svg.append(line("sv","var(--ink-2)",2),line("cv","var(--gold)",3));
+  const lastP=pts[pts.length-1],XL=x(pts.length-1);svg.append(sv("circle",{cx:XL,cy:y(lastP.cv),r:4,fill:"var(--gold)"}),sv("circle",{cx:XL,cy:y(lastP.sv),r:3.5,fill:"var(--ink-2)"}));
+  // Label the end of each line with its value, nudged apart so they never overlap.
+  let yc=y(lastP.cv),ys=y(lastP.sv);const gapY=30;if(Math.abs(yc-ys)<gapY){const m=(yc+ys)/2,up=lastP.cv>=lastP.sv;yc=m+(up?-gapY/2:gapY/2);ys=m+(up?gapY/2:-gapY/2);}
+  const endLabel=(Y,name,v,col)=>{const t=sv("text",{x:XL+10,y:Y-2,class:"endlab"});const a=sv("tspan",{x:XL+10,class:"endname"});a.textContent=name;const b=sv("tspan",{x:XL+10,dy:14,fill:col,class:"endval"});b.textContent=fmt0(v);t.append(a,b);svg.append(t);};
+  endLabel(yc,"You",lastP.cv,"var(--gold)");endLabel(ys,"S&P 500",lastP.sv,"var(--ink)");
   const cross=sv("line",{y1:T,y2:H-B,stroke:"var(--muted)","stroke-dasharray":"3 3",visibility:"hidden"});
   const dotC=sv("circle",{r:4.5,fill:"var(--gold)",visibility:"hidden"}),dotS=sv("circle",{r:4,fill:"var(--ink-2)",visibility:"hidden"});svg.append(cross,dotC,dotS);
   const tip=el("div",{class:"histtip",hidden:true});
   const hide=()=>{tip.hidden=true;[cross,dotC,dotS].forEach(n=>n.setAttribute("visibility","hidden"));};
-  svg.addEventListener("pointermove",e=>{const rc=svg.getBoundingClientRect();const px=(e.clientX-rc.left)*W/rc.width;
-    const i=Math.max(0,Math.min(pts.length-1,Math.round((px-L)/(W-L-Rr)*(pts.length-1))));const p=pts[i],X=x(i);
-    cross.setAttribute("x1",X);cross.setAttribute("x2",X);dotC.setAttribute("cx",X);dotC.setAttribute("cy",y(p.c));dotS.setAttribute("cx",X);dotS.setAttribute("cy",y(p.s));
+  const showIdx=i=>{const rc=svg.getBoundingClientRect();const p=pts[i],X=x(i);
+    cross.setAttribute("x1",X);cross.setAttribute("x2",X);dotC.setAttribute("cx",X);dotC.setAttribute("cy",y(p.cv));dotS.setAttribute("cx",X);dotS.setAttribute("cy",y(p.sv));
     [cross,dotC,dotS].forEach(n=>n.setAttribute("visibility","visible"));
-    tip.replaceChildren(el("div",{class:"meta",text:fmtDate(p.day)}),el("div",{},el("i",{style:"background:var(--gold)"}),"Your portfolio ",el("b",{text:fmtPct(p.c)})," ("+fmt0(p.club)+")"),el("div",{},el("i",{style:"background:var(--ink-2)"}),"S&P 500 ",el("b",{text:fmtPct(p.s)})," ("+fmt0(p.spy)+")"),el("div",{class:"meta",text:(S.picks.some(q=>!q.entryDate)?"Starting value: ":"Money put in so far: ")+fmt0(p.inv)}));
-    tip.hidden=false;const left=X*rc.width/W;tip.style.left=Math.min(Math.max(left,70),rc.width-70)+"px";});
-  svg.addEventListener("pointerleave",hide);
+    tip.replaceChildren(el("div",{class:"meta",text:fmtDate(p.day)}),el("div",{},el("i",{style:"background:var(--gold)"}),"Your portfolio ",el("b",{text:fmt0(p.cv)})," ("+fmtPct(p.c)+")"),el("div",{},el("i",{style:"background:var(--ink-2)"}),"S&P 500 ",el("b",{text:fmt0(p.sv)})," ("+fmtPct(p.s)+")"),el("div",{class:"meta",text:(S.picks.some(q=>!q.entryDate)?"Starting value: ":"Money put in so far: ")+fmt0(p.inv)}));
+    tip.hidden=false;const left=X*rc.width/W;tip.style.left=Math.min(Math.max(left,70),rc.width-70)+"px";};
+  const showAt=e=>{const rc=svg.getBoundingClientRect();const px=(e.clientX-rc.left)*W/rc.width;showIdx(Math.max(0,Math.min(pts.length-1,Math.round((px-L)/(W-L-Rr)*(pts.length-1)))));};
+  svg.addEventListener("pointermove",showAt);svg.addEventListener("pointerdown",showAt);svg.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")hide();});
   const diff=lastP.club-lastP.spy;
   const rangeTxt={"1W":"Over the past week, your","1M":"Over the past month, your","3M":"Over the past 3 months, your","YTD":"This year, your","1Y":"Over the past year, your"}[rk];
   const gap=lastP.c-lastP.s;
   const summary=rangeTxt?el("p",{class:"histsum"},rangeTxt+" portfolio is ",el("b",{class:"gold",text:(lastP.c>=0?"up ":"down ")+fmtPct(Math.abs(lastP.c)).slice(1)}),". The S&P 500 is ",el("b",{text:(lastP.s>=0?"up ":"down ")+fmtPct(Math.abs(lastP.s)).slice(1)}),". ",
     el("span",{class:cls(gap),text:Math.abs(gap)<0.0005?"You're even with the market.":gap>0?`You're ahead by ${fmtPct(gap).slice(1)}.`:`You're behind by ${fmtPct(-gap).slice(1)}.`})):el("p",{class:"histsum"},"Your portfolio is ",el("b",{class:"gold",text:(lastP.c>=0?"up ":"down ")+fmtPct(Math.abs(lastP.c)).slice(1)}),". The same money in the S&P 500 would be ",el("b",{text:(lastP.s>=0?"up ":"down ")+fmtPct(Math.abs(lastP.s)).slice(1)}),". ",
     el("span",{class:cls(diff/lastP.inv),text:Math.abs(diff)<0.5?"You're even with the market.":diff>0?`You're ahead by ${fmt0(diff)}.`:`You're behind by ${fmt0(-diff)}.`}));
-  const legend=el("div",{class:"legend histlegend"},el("span",{},el("i",{style:"background:var(--gold)"}),"Your portfolio"),el("span",{},el("i",{style:"background:var(--ink-2)"}),"Same money in the S&P 500"));
-  box.replaceChildren(rangeBar,summary,legend,el("div",{class:"histwrap"},svg,tip));
+  const legend=el("div",{class:"legend histlegend"},el("span",{},el("i",{style:"background:var(--gold)"}),"Your portfolio"),el("span",{},el("i",{style:"background:var(--ink-2)"}),"Same money in the S&P 500"),el("span",{},el("i",{class:"dash"}),rk==="All"?"Money put in":"Starting value + new buys"));
+  box.replaceChildren(rangeBar,summary,legend,el("div",{class:"histwrap"},tip,svg));
+  // On phones the values sit above the chart; start on the latest day so the box is never empty.
+  if(phoneMQ.matches)showIdx(pts.length-1);
 }
 function renderBreakdown(){
   if(!S.loaded)return;if(S_view==="positions")renderPositions();else if(S_view==="sectors")renderSectors();else if(S_view==="history")renderHistory();
