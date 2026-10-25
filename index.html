@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>WV Finance Club</title>
-<meta name="description" content="Waubonsie Valley Finance Club: our class portfolio, stock research and news briefs.">
+<meta name="description" content="Waubonsie Valley Finance Club: your portfolio, stock research and news briefs.">
 <link rel="icon" type="image/png" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=2026102512">
+<link rel="stylesheet" href="assets/style.css?v=2026102513">
 <script>
 // Club password screen. The password is checked by its SHA-256 hash (lowercased), so it isn't written here.
 // To change it: hash the new password in lowercase and replace WVFC_PASS below.
@@ -18,10 +18,10 @@ try{if(localStorage.getItem("wvfc-pass")===window.WVFC_PASS)document.documentEle
 </head>
 <body>
 
-<div id="gate" role="dialog" aria-label="Enter the club password">
+<div id="gate" role="dialog" aria-label="Enter the password">
   <form id="gate-form" autocomplete="off">
     <img src="assets/logo.png" alt="Waubonsie Valley Finance Club" width="180" height="180">
-    <input id="gate-pass" type="password" placeholder="Club password" aria-label="Club password" autofocus>
+    <input id="gate-pass" type="password" placeholder="Password" aria-label="Password" autofocus>
     <p id="gate-msg" role="alert"></p>
   </form>
 </div>
@@ -56,15 +56,15 @@ try{if(localStorage.getItem("wvfc-pass")===window.WVFC_PASS)document.documentEle
 
 <nav class="tabs" aria-label="Sections">
   <div class="wrap" role="tablist">
-    <button class="tab hasmenu" role="tab" id="tab-portfolio" aria-controls="portfolio" aria-selected="true" aria-haspopup="menu" aria-expanded="false" data-tab="portfolio">Class Portfolio<span class="count" id="cnt-picks"></span><span class="caret" aria-hidden="true"></span></button>
+    <button class="tab hasmenu" role="tab" id="tab-portfolio" aria-controls="portfolio" aria-selected="true" aria-haspopup="menu" aria-expanded="false" data-tab="portfolio">Your Portfolio<span class="count" id="cnt-picks"></span><span class="caret" aria-hidden="true"></span></button>
     <button class="tab" role="tab" id="tab-search" aria-controls="search" aria-selected="false" data-tab="search">Search</button>
     <button class="tab" role="tab" id="tab-news" aria-controls="news" aria-selected="false" data-tab="news">News<span class="count" id="cnt-news"></span></button>
   </div>
   <div class="tabmenu" id="pf-menu" role="menu" hidden>
     <button role="menuitem" data-view="overview">Overview</button>
     <button role="menuitem" data-view="positions">All positions</button>
-    <button role="menuitem" data-view="sectors">What we own by sector</button>
-    <button role="menuitem" data-view="history">Club vs S&amp;P 500 over time</button>
+    <button role="menuitem" data-view="sectors">What you own by sector</button>
+    <button role="menuitem" data-view="history">You vs S&amp;P 500 over time</button>
   </div>
 </nav>
 
@@ -76,28 +76,28 @@ try{if(localStorage.getItem("wvfc-pass")===window.WVFC_PASS)document.documentEle
  <div class="pview" id="pv-overview">
   <div class="sechead">
     <div>
-      <h2>Class Portfolio</h2>
-      <p class="sub">Every stock here won a club debate. Members pitch a stock, debate another member, and the audience votes. The winner joins the portfolio with the audience's reasons as its thesis.</p>
+      <h2>Your Portfolio</h2>
+      <p class="sub">Every stock you own, what you paid, and how it's doing next to the S&amp;P 500.</p>
     </div>
   </div>
   <div class="tiles" id="tiles"></div>
   <p class="notice" id="price-note" hidden></p>
   <div class="panel" id="cmp-panel" hidden>
-    <div class="sechead"><div><div class="eyebrow">How much our money has grown</div><h3 class="h3">Our portfolio vs the S&amp;P 500</h3></div></div>
+    <div class="sechead"><div><div class="eyebrow">How much your money has grown</div><h3 class="h3">Your portfolio vs the S&amp;P 500</h3></div></div>
     <div class="compare" id="cmp"></div>
   </div>
  </div>
  <div class="pview" id="pv-positions" hidden>
-  <div class="sechead"><div><h2>All positions</h2><p class="sub">Every stock the club owns, what we paid, and what it's worth now.</p></div></div>
+  <div class="sechead"><div><h2>All positions</h2><p class="sub">Every stock you own, what you paid, and what it's worth now.</p></div></div>
   <div id="picks"></div>
   <details class="drop" id="drop-pos"><summary><span>All positions table</span></summary><div class="dropbody" id="pos-body"></div></details>
  </div>
  <div class="pview" id="pv-sectors" hidden>
-  <div class="sechead"><div><h2>What we own by sector</h2><p class="sub">How our money is split across types of business, like Tech or Banks. Owning a mix helps if one area has a bad year.</p></div></div>
+  <div class="sechead"><div><h2>What you own by sector</h2><p class="sub">How your money is split across types of business, like Tech or Banks. Owning a mix helps if one area has a bad year.</p></div></div>
   <div class="panel" id="sec-body"></div>
  </div>
  <div class="pview" id="pv-history" hidden>
-  <div class="sechead"><div><h2>Club vs S&amp;P 500 over time</h2><p class="sub">Our portfolio's value each day, next to what the same money would be worth in the S&amp;P 500. It shows how much we have gained or lost, in %, since we started.</p></div></div>
+  <div class="sechead"><div><h2>You vs S&amp;P 500 over time</h2><p class="sub">Your portfolio's value each day, next to what the same money would be worth in the S&amp;P 500. It shows how much you have gained or lost, in %, since you started.</p></div></div>
   <div class="panel" id="hist-body"></div>
  </div>
 </section>
@@ -166,7 +166,7 @@ try{if(localStorage.getItem("wvfc-pass")===window.WVFC_PASS)document.documentEle
 </footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="config.js?v=2026102512"></script>
-<script src="assets/app.js?v=2026102512"></script>
+<script src="config.js?v=2026102513"></script>
+<script src="assets/app.js?v=2026102513"></script>
 </body>
 </html>

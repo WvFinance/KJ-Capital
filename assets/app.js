@@ -99,7 +99,7 @@ function renderTiles(){
     tile("Money invested",S.picks.length?fmt0(inv):"–",`${S.picks.length} ${S.picks.length===1?"stock":"stocks"} in the portfolio`),
     tile("Worth now",val==null?"–":fmt0(val),val==null?"live value":`${sgn(val-inv)} (${fmtPct(val/inv-1)})`,val==null?"":cls(val/inv-1)),
     tile("Same money in the S&P 500",spyV==null?"–":fmt0(spyV),spyV==null?"what an index fund did":`${sgn(spyV-inv)} (${fmtPct(spyV/inv-1)})`,spyV==null?"":cls(spyV/inv-1)),
-    tile("Beating the market",cs.length?`${beating} of ${cs.length}`:"–",spyV!=null?((val-spyV)>=0?`club leads by ${fmt0(val-spyV)}`:`club trails by ${fmt0(spyV-val)}`):"picks ahead of the S&P 500"));
+    tile("Beating the market",cs.length?`${beating} of ${cs.length}`:"–",spyV!=null?((val-spyV)>=0?`you lead by ${fmt0(val-spyV)}`:`you trail by ${fmt0(spyV-val)}`):"picks ahead of the S&P 500"));
   $("#cnt-picks").textContent=S.picks.length?String(S.picks.length):"";
   const note=$("#price-note");
   if(S.picks.length&&!all){note.hidden=false;note.textContent="Prices for a new pick show up after the next daily price update, usually within a few minutes.";}
@@ -114,11 +114,11 @@ function renderPicks(){
   const wrap=$("#picks");wrap.replaceChildren();
   if(!S.picks.length){
     wrap.append(el("div",{class:"empty"},el("h3",{text:"No picks yet"}),
-      el("p",{text:"The portfolio fills up after each debate. Here's how a stock gets in:"}),
+      el("p",{text:"Your stocks will show up here once they're added. Here's what you'll see:"}),
       el("div",{class:"steps"},
-        el("div",{},el("b",{text:"1. Pitch"}),"A member picks a stock and builds the case for it."),
-        el("div",{},el("b",{text:"2. Debate"}),"Two members go head to head on their stocks at the meeting."),
-        el("div",{},el("b",{text:"3. Vote"}),"The audience votes A or B on the Google Form and says why. The winner joins the portfolio at that day's price."))));
+        el("div",{},el("b",{text:"1. What you own"}),"Each stock, what you paid for it, and what it's worth now."),
+        el("div",{},el("b",{text:"2. How it's doing"}),"Your gain or loss, next to the same money in the S&P 500."),
+        el("div",{},el("b",{text:"3. The news"}),"A short, plain-English brief on each stock you own."))));
     return;}
   const grid=el("div",{class:"picks"});
   for(const p of S.picks){
@@ -139,7 +139,7 @@ function renderPicks(){
       el("p",{class:"thesis"},el("b",{text:"Thesis: "}),p.thesis||""),
       d&&tot?el("div",{class:"debate"},el("div",{class:"eyebrow",text:`Won the debate vs ${d.opponent} · ${d.votesFor}–${d.votesAgainst}`}),
         el("div",{class:"vbar","aria-hidden":"true"},el("span",{style:`width:${d.votesFor/tot*100}%;background:var(--gold)`}),el("span",{style:`width:${d.votesAgainst/tot*100}%;background:var(--muted)`}))):null,
-      el("div",{class:"meta",text:"Pitched by "+(p.pitchedBy||"a member")}),
+      p.pitchedBy?el("div",{class:"meta",text:"Added by "+p.pitchedBy}):null,
       el("div",{},el("button",{class:"btn small",text:"Full chart & news →",onclick:()=>{openStock(sym);showTab("search",true);}}))));
     tv(mini,"mini-symbol-overview",{symbol:sym,width:"100%",height:170,dateRange:"12M",colorTheme:tvTheme(),isTransparent:true,autosize:false,largeChartUrl:""});
   }
@@ -167,10 +167,10 @@ function renderSectors(){
   const box=$("#sec-body");const by={};
   for(const p of S.picks){const c=calc(p);const v=c&&c.value!=null?c.value:(p.invested||0);if(v>0)by[p.sector||"Other"]=(by[p.sector||"Other"]||0)+v;}
   let parts=Object.entries(by).sort((a,b)=>b[1]-a[1]);
-  if(!parts.length){box.replaceChildren(emptyNote("The pie fills in once the club owns a stock. Each slice is a type of business, like Tech or Banks."));return;}
+  if(!parts.length){box.replaceChildren(emptyNote("The pie fills in once you own a stock. Each slice is a type of business, like Tech or Banks."));return;}
   if(parts.length>8){const rest=parts.slice(7).reduce((s,x)=>s+x[1],0);parts=parts.slice(0,7).concat([["Other",rest]]);}
   const total=parts.reduce((s,x)=>s+x[1],0);const R=90,r0=56,C=110;
-  const svg=sv("svg",{viewBox:"0 0 220 220",class:"donut",role:"img","aria-label":"What we own by sector"});
+  const svg=sv("svg",{viewBox:"0 0 220 220",class:"donut",role:"img","aria-label":"What you own by sector"});
   let a=-Math.PI/2;
   parts.forEach(([name,v],i)=>{const frac=v/total;const col=SECTOR_COLORS[i%SECTOR_COLORS.length];
     if(frac>=0.9999){svg.append(sv("circle",{cx:C,cy:C,r:(R+r0)/2,fill:"none",stroke:col,"stroke-width":R-r0}));}
@@ -196,13 +196,13 @@ function historySeries(){
 }
 function renderHistory(box=$("#hist-body")){
   const pts=historySeries();
-  if(!pts){box.replaceChildren(emptyNote(S.picks.length?"The chart fills in after the next daily price update.":"Once we own stocks, this line shows our portfolio's value each day next to the same money in the S&P 500."));return;}
+  if(!pts){box.replaceChildren(emptyNote(S.picks.length?"The chart fills in after the next daily price update.":"Once you own stocks, this line shows your portfolio's value each day next to the same money in the S&P 500."));return;}
   const W=Math.max(320,box.clientWidth||760),H=300,L=64,Rr=16,T=16,B=30;
   // Plot growth in %, (value / money put in) - 1, so buying a new stock doesn't make the line jump.
   for(const p of pts){p.c=p.club/p.inv-1;p.s=p.spy/p.inv-1;}
   const vals=pts.flatMap(p=>[p.c,p.s,0]);let mn=Math.min(...vals),mx=Math.max(...vals);const pad=(mx-mn)*0.1||0.01;mn-=pad;mx+=pad;
   const x=i=>L+(pts.length===1?0.5:i/(pts.length-1))*(W-L-Rr),y=v=>T+(1-(v-mn)/(mx-mn))*(H-T-B);
-  const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,class:"hist",role:"img","aria-label":"Club portfolio value compared with the S&P 500 over time"});
+  const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,class:"hist",role:"img","aria-label":"Your portfolio value compared with the S&P 500 over time"});
   const step=niceStep((mx-mn)/4);for(let v=Math.ceil(mn/step)*step;v<=mx;v+=step){const Y=y(v);svg.append(sv("line",{x1:L,x2:W-Rr,y1:Y,y2:Y,stroke:"var(--line)"}));const t=sv("text",{x:L-8,y:Y+4,"text-anchor":"end"});t.textContent=(v>0?"+":"")+Math.round(v*100*10)/10+"%";svg.append(t);}
   svg.append(sv("line",{x1:L,x2:W-Rr,y1:y(0),y2:y(0),stroke:"var(--muted)","stroke-width":1.5}));
   const nt=Math.min(W<520?3:5,pts.length);for(let k=0;k<nt;k++){const i=nt===1?0:Math.round(k*(pts.length-1)/(nt-1));const t=sv("text",{x:x(i),y:H-8,"text-anchor":k===0?"start":k===nt-1?"end":"middle"});t.textContent=fmtDate(pts[i].day).replace(/, \d{4}$/,"");svg.append(t);}
@@ -217,13 +217,13 @@ function renderHistory(box=$("#hist-body")){
     const i=Math.max(0,Math.min(pts.length-1,Math.round((px-L)/(W-L-Rr)*(pts.length-1))));const p=pts[i],X=x(i);
     cross.setAttribute("x1",X);cross.setAttribute("x2",X);dotC.setAttribute("cx",X);dotC.setAttribute("cy",y(p.c));dotS.setAttribute("cx",X);dotS.setAttribute("cy",y(p.s));
     [cross,dotC,dotS].forEach(n=>n.setAttribute("visibility","visible"));
-    tip.replaceChildren(el("div",{class:"meta",text:fmtDate(p.day)}),el("div",{},el("i",{style:"background:var(--gold)"}),"Our portfolio ",el("b",{text:fmtPct(p.c)})," ("+fmt0(p.club)+")"),el("div",{},el("i",{style:"background:var(--ink-2)"}),"S&P 500 ",el("b",{text:fmtPct(p.s)})," ("+fmt0(p.spy)+")"),el("div",{class:"meta",text:"Money put in so far: "+fmt0(p.inv)}));
+    tip.replaceChildren(el("div",{class:"meta",text:fmtDate(p.day)}),el("div",{},el("i",{style:"background:var(--gold)"}),"Your portfolio ",el("b",{text:fmtPct(p.c)})," ("+fmt0(p.club)+")"),el("div",{},el("i",{style:"background:var(--ink-2)"}),"S&P 500 ",el("b",{text:fmtPct(p.s)})," ("+fmt0(p.spy)+")"),el("div",{class:"meta",text:"Money put in so far: "+fmt0(p.inv)}));
     tip.hidden=false;const left=X*rc.width/W;tip.style.left=Math.min(Math.max(left,70),rc.width-70)+"px";});
   svg.addEventListener("pointerleave",hide);
   const diff=lastP.club-lastP.spy;
-  const summary=el("p",{class:"histsum"},"Our portfolio is ",el("b",{class:"gold",text:(lastP.c>=0?"up ":"down ")+fmtPct(Math.abs(lastP.c)).slice(1)}),". The same money in the S&P 500 would be ",el("b",{text:(lastP.s>=0?"up ":"down ")+fmtPct(Math.abs(lastP.s)).slice(1)}),". ",
+  const summary=el("p",{class:"histsum"},"Your portfolio is ",el("b",{class:"gold",text:(lastP.c>=0?"up ":"down ")+fmtPct(Math.abs(lastP.c)).slice(1)}),". The same money in the S&P 500 would be ",el("b",{text:(lastP.s>=0?"up ":"down ")+fmtPct(Math.abs(lastP.s)).slice(1)}),". ",
     el("span",{class:cls(diff/lastP.inv),text:Math.abs(diff)<0.5?"We're even with the market.":diff>0?`We're ahead by ${fmt0(diff)}.`:`We're behind by ${fmt0(-diff)}.`}));
-  const legend=el("div",{class:"legend histlegend"},el("span",{},el("i",{style:"background:var(--gold)"}),"Our portfolio"),el("span",{},el("i",{style:"background:var(--ink-2)"}),"Same money in the S&P 500"));
+  const legend=el("div",{class:"legend histlegend"},el("span",{},el("i",{style:"background:var(--gold)"}),"Your portfolio"),el("span",{},el("i",{style:"background:var(--ink-2)"}),"Same money in the S&P 500"));
   box.replaceChildren(summary,legend,el("div",{class:"histwrap"},svg,tip));
 }
 function renderBreakdown(){
@@ -281,9 +281,9 @@ function renderNews(){
   $("#news-legend").replaceChildren(...["bullish","neutral","bearish"].map(k=>el("span",{},el("i",{style:`background:var(--${k==="bullish"?"up":k==="bearish"?"down":"flat"})`}),`${SENT[k][0]} ${counts[k]}`)));
   if(!S.newsTk||!list.some(n=>n.ticker===S.newsTk))S.newsTk=list[0].ticker;
   const mk=list.filter(n=>n.market).length,sk=list.length-mk;const label=t=>el("div",{class:"eyebrow",style:"margin:6px 2px 0",text:t});
-  list.forEach((n,i)=>{if(i===0&&mk)nl.append(label("The market"));if(i===mk&&sk)nl.append(label("Class portfolio"));
+  list.forEach((n,i)=>{if(i===0&&mk)nl.append(label("The market"));if(i===mk&&sk)nl.append(label("Your portfolio"));
     nl.append(el("button",{class:"nitem","aria-current":String(n.ticker===S.newsTk),onclick:()=>{S.newsTk=n.ticker;renderNews();renderNewsFeed();if(innerWidth<820)$("#brief").scrollIntoView({behavior:"smooth",block:"start"});}},el("span",{class:"t",text:n.market?n.name:n.ticker}),sentiPill(n.sentiment),el("span",{class:"h",text:n.headline||""})));});
-  if(!sk){nl.append(label("Class portfolio"),el("div",{class:"notice",text:S.picks.length?"Briefs for our picks are on the way.":"Briefs for our stocks show up here once they're in the Class Portfolio."}));}
+  if(!sk){nl.append(label("Your portfolio"),el("div",{class:"notice",text:S.picks.length?"Briefs for your stocks are on the way.":"Briefs for your stocks show up here once they're in Your Portfolio."}));}
   const n=list.find(x=>x.ticker===S.newsTk);
   br.replaceChildren(...[
     el("div",{class:"sechead"},el("div",{},el("div",{class:"eyebrow",text:n.market?`Market brief · ${n.name}`:`${n.ticker} · ${n.name||""}`}),el("h3",{text:n.headline||""})),sentiPill(n.sentiment)),
@@ -291,7 +291,7 @@ function renderNews(){
     el("div",{class:"sides"},el("div",{class:"side-col bull"},el("h4",{text:"What the bulls say"}),el("ul",{},(n.bull||[]).map(x=>el("li",{text:x})))),el("div",{class:"side-col bear"},el("h4",{text:"What the bears say"}),el("ul",{},(n.bear||[]).map(x=>el("li",{text:x}))))),
     n.nextEvent?el("div",{class:"notice"},el("b",{text:"Coming up: "}),n.nextEvent):null,
     el("details",{class:"drop srcdrop"},el("summary",{},el("span",{text:`Sources (${(n.sources||[]).length})`})),el("ul",{class:"sources"},(n.sources||[]).map(s=>el("li",{},el("a",{href:s.url,target:"_blank",rel:"noopener noreferrer",text:s.title}),el("span",{class:"o",text:[s.outlet,s.date].filter(Boolean).join(" · ")}))))),
-    el("div",{class:"meta",text:`Written by Claude from the articles in Sources · updated ${n.updatedAt?fmtDate(n.updatedAt):"recently"}. Summaries can leave things out, so read the articles before you pitch.`}),
+    el("div",{class:"meta",text:`Written by Claude from the articles in Sources · updated ${n.updatedAt?fmtDate(n.updatedAt):"recently"}. Summaries can leave things out, so read the articles before you decide.`}),
     el("div",{},el("button",{class:"btn small",text:`Open ${n.market?n.name:n.ticker} chart →`,onclick:()=>{openStock(n.symbol||n.ticker);showTab("search",true);}}))].filter(Boolean));
 }
 function renderNewsFeed(){
