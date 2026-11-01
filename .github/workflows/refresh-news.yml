@@ -1,10 +1,13 @@
 name: Refresh news briefs
 
-# Every Sunday evening, Claude rewrites the S&P 500, Nasdaq and portfolio briefs.
+# Claude rewrites the S&P 500, Nasdaq and portfolio briefs.
 # Uses the ANTHROPIC_API_KEY repository secret, so each run spends Claude credit.
+# The weekly Sunday schedule was turned off on 2026-11-01 at Charlie's request.
+# It now runs only when started by hand from the Actions tab ("Run workflow").
+# To turn the weekly run back on, add this under "on:":
+#   schedule:
+#     - cron: "0 23 * * 0"   # Sunday 6pm Central (5pm in winter)
 on:
-  schedule:
-    - cron: "0 23 * * 0"   # Sunday 6pm Central (5pm in winter)
   workflow_dispatch:
     inputs:
       only:
